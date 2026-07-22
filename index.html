@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metrorrey - Supervisión y Control de Estaciones</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Firebase (optional, only used if the person configures cloud sync) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+      .tab-btn-active { border-bottom-color: #0284c7 !important; color: #0284c7 !important; font-weight: 700 !important; }
+      .station-tab-active { background-color: #0284c7 !important; color: #ffffff !important; box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.3); }
+      ::-webkit-scrollbar { height: 8px; width: 8px; }
+      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+      .table-control-header { background-color: #84cc16; color: #0f172a; font-weight: 700; }
+      .row-inconsistent { background-color: #fff7ed !important; }
+      .save-dot { width: 7px; height: 7px; border-radius: 9999px; display: inline-block; }
+    </style>
+  </head>
+  <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- ============================================================
+         HEADER
+         ============================================================ -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+          <div class="bg-sky-600 text-white p-2.5 rounded-xl shadow-inner flex items-center justify-center font-black text-xl tracking-wider">M</div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="font-bold text-lg tracking-tight">METRORREY</h1>
+              <span class="bg-sky-500/20 text-sky-400 text-xs px-2.5 py-0.5 rounded-full font-bold border border-sky-500/30">Línea 2</span>
+            </div>
+            <p class="text-xs text-slate-400 flex items-center gap-1.5">
+              Sistema de Supervisión y Control de Estaciones
+              <span id="save-indicator" class="ml-2 inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide">
+                <span id="save-dot" class="save-dot bg-emerald-400"></span>
+                <span id="save-text">Guardado</span>
+              </span>
+              <button onclick="openSyncModal()" id="sync-indicator" class="ml-2 inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded-full border border-slate-700 transition">
+                <i data-lucide="cloud-off" class="w-3 h-3 text-slate-500"></i>
+                <span id="sync-text">Sin sincronizar</span>
+              </button>
+            </p>
+          </div>
+        </div>
+
+        <nav class="flex gap-1 bg-slate-800 p-1 rounded-xl border border-slate-700">
+          <button onclick="switchMainTab('stations')" id="nav-stations" class="px-4 py-2 rounded-lg text-xs font-medium transition flex items-center gap-2 tab-btn-active">
+            <i data-lucide="map-pin" class="w-4 h-4"></i> Estaciones y Control
+          </button>
+          <button onclick="switchMainTab('analytics')" id="nav-analytics" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition flex items-center gap-2">
+            <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Reportes y Avances
+          </button>
+          <button onclick="switchMainTab('presupuesto')" id="nav-presupuesto" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition flex items-center gap-2">
+            <i data-lucide="wallet" class="w-4 h-4"></i> Presupuesto
+          </button>
+          <button onclick="switchMainTab('resumen')" id="nav-resumen" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition flex items-center gap-2">
+            <i data-lucide="clipboard-list" class="w-4 h-4"></i> Resumen
+          </button>
+        </nav>
+
+        <div class="flex items-center gap-3">
+          <div class="bg-white px-3 py-1.5 rounded-lg border border-slate-700 shadow-inner flex items-center gap-2">
+            <div class="text-[10px] leading-tight text-slate-900 font-bold tracking-tight text-right">
+              <div>ig Anuncios</div>
+              <div class="text-[8px] text-sky-700 font-medium">Impresiones</div>
+            </div>
+            <div class="w-6 h-6 rounded bg-sky-700 text-white flex items-center justify-center font-black text-xs shadow">IG</div>
+          </div>
+          <button onclick="document.getElementById('import-control-table-input').click()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition">
+            <i data-lucide="upload" class="w-4 h-4"></i> Cargar Tabla de Control + Imágenes
+          </button>
+          <input type="file" id="import-control-table-input" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleImportFile(event)">
+          <button onclick="exportFullReportPDF()" class="bg-sky-600 hover:bg-sky-500 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition">
+            <i data-lucide="file-text" class="w-4 h-4"></i> Exportar PDF
+          </button>
+          <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Excel
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============================================================
+         MAIN
+         ============================================================ -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col gap-6">
+
+      <div id="view-stations" class="flex flex-col gap-6">
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h2 class="text-sm font-bold text-sky-700 uppercase tracking-wide flex items-center gap-1.5">
+              <i data-lucide="map-pin" class="w-4 h-4"></i> Estaciones del Proyecto
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">Selecciona una estación para gestionar su minuta, planos y tabla de control de señalética.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <div id="stations-tabs-container" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto"></div>
+            <button onclick="openNewStationModal()" class="shrink-0 bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i> Nueva Estación
+            </button>
+            <button onclick="openBulkStationsModal()" class="shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition">
+              <i data-lucide="list-plus" class="w-4 h-4"></i> Importar Lista de Estaciones
+            </button>
+          </div>
+        </div>
+
+        <div id="station-detail-container" class="flex flex-col gap-6"></div>
+      </div>
+
+      <div id="view-analytics" class="hidden flex flex-col gap-6">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h2 class="text-lg font-bold text-slate-800 mb-1">Resumen General de Avances y Métricas</h2>
+          <p class="text-xs text-slate-500 mb-6">Estadísticas globales de fabricación, instalación y control de señalética en todas las estaciones de Línea 2.</p>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Total Señales Contratadas</span>
+              <span id="stat-total-contrato" class="text-3xl font-black text-slate-800 mt-1.5">0</span>
+              <span class="text-[11px] text-slate-400 mt-0.5">En todas las estaciones de Línea 2</span>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-sky-200 shadow-sm flex flex-col justify-between">
+              <span class="text-[11px] font-bold text-sky-600 uppercase tracking-wide">Señales Listas (Impresión)</span>
+              <span id="stat-total-impresion" class="text-3xl font-black text-sky-700 mt-1.5">0</span>
+              <span class="text-[11px] text-slate-400 mt-0.5">Aprobadas para producción</span>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-emerald-200 shadow-sm flex flex-col justify-between">
+              <span class="text-[11px] font-bold text-emerald-600 uppercase tracking-wide">Señales Instaladas OK</span>
+              <span id="stat-total-instaladas" class="text-3xl font-black text-emerald-700 mt-1.5">0</span>
+              <span class="text-[11px] text-slate-400 mt-0.5">Piezas completamente colocadas</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center">
+              <div class="w-full flex items-center justify-between mb-4 gap-2 flex-wrap">
+                <h3 class="text-xs font-bold text-slate-700">Avance de Instalación por Estación</h3>
+                <select id="analytics-station-select" onchange="renderStationProgressCard()" class="text-xs border border-slate-200 rounded-lg px-2 py-1.5 bg-slate-50 font-bold focus:ring-2 focus:ring-sky-500"></select>
+              </div>
+              <div class="w-full h-64 flex flex-col items-center justify-center gap-3">
+                <div id="analytics-station-progress-pct" class="text-6xl font-black text-sky-700">0%</div>
+                <div id="analytics-station-progress-name" class="text-sm font-bold text-slate-700"></div>
+                <div class="w-full max-w-xs bg-slate-100 rounded-full h-3 overflow-hidden">
+                  <div id="analytics-station-progress-bar" class="bg-sky-600 h-3 rounded-full transition-all" style="width:0%"></div>
+                </div>
+                <div id="analytics-station-progress-detail" class="text-[11px] text-slate-400"></div>
+              </div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center">
+              <h3 class="text-xs font-bold text-slate-700 mb-4 w-full text-left">Estado General del Proyecto (Línea 2)</h3>
+              <div class="w-full h-64 relative flex items-center justify-center"><canvas id="analyticsChartOverall"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-presupuesto" class="hidden flex flex-col gap-6">
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h2 class="text-sm font-bold text-sky-700 uppercase tracking-wide flex items-center gap-1.5">
+              <i data-lucide="wallet" class="w-4 h-4"></i> Presupuesto por Partida y Estación
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">Carga tu presupuesto detallado con precios unitarios por partida para calcular aditivas y deductivas exactas.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <select id="budget-station-select" onchange="setBudgetStation(this.value)" class="text-xs border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus:ring-2 focus:ring-sky-500 font-bold min-w-[220px]"></select>
+            <button onclick="document.getElementById('import-budget-prices-input').click()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition">
+              <i data-lucide="upload" class="w-4 h-4"></i> Cargar Presupuesto con Precios Unitarios
+            </button>
+            <input type="file" id="import-budget-prices-input" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleImportBudgetPrices(event)">
+          </div>
+        </div>
+        <div id="budget-detail-container" class="flex flex-col gap-6"></div>
+      </div>
+
+      <div id="view-resumen" class="hidden flex flex-col gap-6">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-1">
+            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i data-lucide="clipboard-list" class="w-5 h-5 text-sky-600"></i> Resumen de Presupuesto por Estación</h2>
+            <button onclick="openBulkBudgetModal()" class="shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition">
+              <i data-lucide="upload" class="w-4 h-4"></i> Cargar Presupuesto Base por Estación
+            </button>
+          </div>
+          <p class="text-xs text-slate-500 mb-6">Presupuesto contratado, aditivas y deductivas calculadas automáticamente por partida, y saldo a pagar por estación.</p>
+          <div id="resumen-table-container" class="overflow-x-auto"></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ============================================================
+         MODALS
+         ============================================================ -->
+    <div id="modal-image-lightbox" class="fixed inset-0 bg-slate-950/80 z-[100] hidden items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-3xl w-full overflow-hidden shadow-2xl flex flex-col">
+        <div class="bg-slate-900 text-white px-4 py-3 flex justify-between items-center">
+          <h3 id="lightbox-title" class="text-sm font-bold truncate">Vista Previa de Imagen / Señal</h3>
+          <button onclick="closeImageLightbox()" class="text-slate-400 hover:text-white p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="p-6 bg-slate-900/90 flex items-center justify-center min-h-[350px]">
+          <img id="lightbox-img" src="" alt="Vista previa ampliada" class="max-h-[70vh] max-w-full rounded-lg object-contain shadow-lg border border-slate-700">
+        </div>
+        <div class="bg-slate-100 px-4 py-3 border-t border-slate-200 flex justify-end">
+          <button onclick="closeImageLightbox()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-xs font-medium">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-new-station" class="fixed inset-0 bg-slate-950/80 z-[100] hidden items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl flex flex-col">
+        <div class="bg-slate-900 text-white px-4 py-3 flex justify-between items-center">
+          <h3 class="text-sm font-bold flex items-center gap-2"><i id="station-modal-icon" data-lucide="plus-circle" class="w-4 h-4"></i> <span id="station-modal-title">Nueva Estación</span></h3>
+          <button onclick="closeNewStationModal()" class="text-slate-400 hover:text-white p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="p-5 flex flex-col gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Nombre de la estación</label>
+            <input type="text" id="new-station-name" placeholder="Ej. Del Golfo" class="w-full text-sm p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-sky-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Línea</label>
+            <input type="text" id="new-station-line" placeholder="Ej. Línea 2" value="Línea 2" class="w-full text-sm p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-sky-500">
+          </div>
+        </div>
+        <div class="bg-slate-100 px-4 py-3 border-t border-slate-200 flex justify-end gap-2">
+          <button onclick="closeNewStationModal()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold">Cancelar</button>
+          <button onclick="saveNewStation()" id="station-modal-save-btn" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-xs font-bold">Crear Estación</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-bulk-budget" class="fixed inset-0 bg-slate-950/80 z-[100] hidden items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        <div class="bg-indigo-700 text-white px-4 py-3 flex justify-between items-center shrink-0">
+          <h3 class="text-sm font-bold flex items-center gap-2"><i data-lucide="upload" class="w-4 h-4"></i> Cargar Presupuesto Base por Estación</h3>
+          <button onclick="closeBulkBudgetModal()" class="text-indigo-200 hover:text-white p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="p-5 flex flex-col gap-3 overflow-y-auto">
+          <p class="text-xs text-slate-600 leading-relaxed">Pega una lista o tabla con el nombre de cada estación y su monto:</p>
+          <textarea id="bulk-budget-input" rows="10" placeholder="Pega tu lista o tabla aquí..." class="w-full text-xs p-3 border border-slate-200 rounded-xl bg-slate-50 font-mono focus:ring-2 focus:ring-indigo-500"></textarea>
+        </div>
+        <div class="bg-slate-100 px-4 py-3 border-t border-slate-200 flex justify-end gap-2 shrink-0">
+          <button onclick="closeBulkBudgetModal()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold">Cancelar</button>
+          <button onclick="processBulkBudget()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold">Aplicar Presupuestos</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-bulk-stations" class="fixed inset-0 bg-slate-950/80 z-[100] hidden items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        <div class="bg-indigo-700 text-white px-4 py-3 flex justify-between items-center shrink-0">
+          <h3 class="text-sm font-bold flex items-center gap-2"><i data-lucide="list-plus" class="w-4 h-4"></i> Importar Lista de Estaciones</h3>
+          <button onclick="closeBulkStationsModal()" class="text-indigo-200 hover:text-white p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="p-5 flex flex-col gap-3 overflow-y-auto">
+          <textarea id="bulk-stations-input" rows="10" placeholder="Pega tu lista aquí..." class="w-full text-xs p-3 border border-slate-200 rounded-xl bg-slate-50 font-mono focus:ring-2 focus:ring-indigo-500"></textarea>
+        </div>
+        <div class="bg-slate-100 px-4 py-3 border-t border-slate-200 flex justify-end gap-2 shrink-0">
+          <button onclick="closeBulkStationsModal()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold">Cancelar</button>
+          <button onclick="processBulkStations()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold">Crear Estaciones Faltantes</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-confirm-action" class="fixed inset-0 bg-slate-950/80 z-[100] hidden items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl flex flex-col">
+        <div class="bg-rose-600 text-white px-4 py-3 flex justify-between items-center">
+          <h3 class="text-sm font-bold flex items-center gap-2"><i data-lucide="trash-2" class="w-4 h-4"></i> Confirmar Eliminación</h3>
+          <button onclick="closeConfirmActionModal()" class="text-rose-200 hover:text-white p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="p-5 flex flex-col gap-2">
+          <p id="confirm-action-message" class="text-sm text-slate-700 leading-relaxed"></p>
+          <p class="text-[11px] text-rose-600 font-bold">⚠ Esta acción no se puede deshacer.</p>
+        </div>
+        <div class="bg-slate-100 px-4 py-3 border-t border-slate-200 flex justify-end gap-2">
+          <button onclick="closeConfirmActionModal()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold">Cancelar</button>
+          <button onclick="runConfirmedAction()" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg text-xs font-bold">Sí, Eliminar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-sync" class="fixed inset-0 bg-slate-950/80 z-[100] hidden items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        <div class="bg-slate-900 text-white px-4 py-3 flex justify-between items-center shrink-0">
+          <h3 class="text-sm font-bold flex items-center gap-2"><i data-lucide="cloud" class="w-4 h-4"></i> Sincronización en la Nube (equipo compartido)</h3>
+          <button onclick="closeSyncModal()" class="text-slate-400 hover:text-white p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="p-5 flex flex-col gap-4 overflow-y-auto">
+          <div id="sync-status-banner" class="p-3 rounded-xl border text-xs font-bold flex items-center gap-2"></div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Pega aquí tu firebaseConfig:</label>
+            <textarea id="sync-config-input" rows="7" placeholder='{ apiKey: "...", projectId: "...", ... }' class="w-full text-xs p-3 border border-slate-200 rounded-xl bg-slate-50 font-mono focus:ring-2 focus:ring-sky-500"></textarea>
+          </div>
+        </div>
+        <div class="bg-slate-100 px-4 py-3 border-t border-slate-200 flex justify-between items-center gap-2 shrink-0">
+          <button onclick="disableSync()" id="sync-disconnect-btn" class="text-rose-600 hover:underline text-xs font-bold hidden">Desconectar sincronización</button>
+          <div class="flex gap-2 ml-auto">
+            <button onclick="closeSyncModal()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold">Cerrar</button>
+            <button onclick="connectSync()" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-lg text-xs font-bold">Conectar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-sync-conflict" class="fixed inset-0 bg-slate-950/90 z-[120] hidden items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col">
+        <div class="bg-amber-500 text-white px-4 py-3 flex items-center gap-2">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+          <h3 class="text-sm font-bold">Se encontraron datos en dos lugares</h3>
+        </div>
+        <div class="p-5 flex flex-col gap-4">
+          <p class="text-xs text-slate-600 leading-relaxed">Ya hay información guardada tanto en la nube como en este navegador. Elige cuál quieres conservar:</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="border-2 border-sky-300 rounded-xl p-3 bg-sky-50">
+              <div class="text-xs font-bold text-sky-800 mb-1">☁ En la nube</div>
+              <div id="sync-conflict-cloud-summary" class="text-[11px] text-slate-600"></div>
+            </div>
+            <div class="border-2 border-slate-300 rounded-xl p-3 bg-slate-50">
+              <div class="text-xs font-bold text-slate-800 mb-1">💻 En este navegador</div>
+              <div id="sync-conflict-local-summary" class="text-[11px] text-slate-600"></div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-slate-100 px-4 py-3 border-t border-slate-200 flex flex-col md:flex-row justify-end gap-2">
+          <button onclick="resolveSyncConflict('local')" class="bg-white border-2 border-slate-400 hover:bg-slate-50 text-slate-800 px-4 py-2 rounded-lg text-xs font-bold">Usar los de este navegador</button>
+          <button onclick="resolveSyncConflict('cloud')" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-lg text-xs font-bold">Usar los de la nube</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast-container" class="fixed bottom-6 right-6 z-[110] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- ============================================================
+         APPLICATION LOGIC
+         ============================================================ -->
+    <script>
+      'use strict';
+
+      let stations = [];
+      const ui = { activeStationId: 'alameda', activeMainTab: 'stations', activeStationTab: 'checklist' };
+
+      const INITIAL_STATIONS_DATA = [
+        { name: "Alameda", budget: 192525.31 },
+        { name: "Alfonso Reyes", budget: 208096.97 },
+        { name: "Anáhuac", budget: 223589.28 },
+        { name: "Arena Monterrey", budget: 216995.83 },
+        { name: "Aztlán", budget: 213270.13 },
+        { name: "Central", budget: 225586.58 },
+        { name: "Colonia Obrera", budget: 174614.92 },
+        { name: "Cuauhtémoc L1", budget: 288855.66 },
+        { name: "Cuauhtémoc L2", budget: 182790.25 },
+        { name: "Del Golfo", budget: 204086.23 },
+        { name: "Edison", budget: 238130.73 },
+        { name: "Fundadores", budget: 190484.42 },
+        { name: "Félix U. Gómez", budget: 266825.86 },
+        { name: "General Anaya", budget: 217782.14 },
+        { name: "Hospital", budget: 207122.23 },
+        { name: "Hospital Metropolitano", budget: 202270.43 },
+        { name: "Lerdo de Tejada", budget: 208798.63 },
+        { name: "Los Ángeles", budget: 247253.53 },
+        { name: "Metalúrgicos", budget: 160258.84 },
+        { name: "Mitras", budget: 212131.63 },
+        { name: "Moderna", budget: 228208.73 },
+        { name: "Niños Héroes", budget: 201709.43 },
+        { name: "Padre Mier", budget: 206997.74 },
+        { name: "Penitenciaría", budget: 208640.23 },
+        { name: "Regina", budget: 204890.64 },
+        { name: "Ruiz Cortines", budget: 177037.79 },
+        { name: "San Bernabé", budget: 211682.83 },
+        { name: "San Nicolás", budget: 204441.83 },
+        { name: "Santa Lucía", budget: 208148.97 },
+        { name: "Santiago Tapia", budget: 210817.43 },
+        { name: "Sendero", budget: 217424.15 },
+        { name: "Simón Bolívar", budget: 214864.03 },
+        { name: "Talleres", budget: 116049.98 },
+        { name: "Unidad Modelo", budget: 226725.08 },
+        { name: "Universidad", budget: 225550.80 },
+        { name: "Y Griega", budget: 0.00 },
+        { name: "Zaragoza", budget: 321986.88 }
+      ];
+
+      function seedStations() {
+        return INITIAL_STATIONS_DATA.map((item, idx) => {
+          const id = normalizeText(item.name).replace(/[^a-z0-9]+/g, '_');
+          const code = normalizeText(item.name).replace(/[^a-z]/g, '').slice(0, 3).toUpperCase() || 'EST';
+          const st = {
+            id,
+            name: item.name,
+            code,
+            line: 'Línea 2',
+            status: item.budget > 0 ? 'En Proceso' : 'Programada',
+            progress: 0,
+            checklist: []
+          };
+          ensureStationDefaults(st);
+          st.presupuesto.base = item.budget;
+          return st;
+        });
+      }
+
+      const STORAGE_KEY = 'metrorrey_app_state_v11';
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ stations, ui }));
+          setSaveIndicator('ok');
+        } catch (err) {
+          console.error('No se pudo guardar el estado:', err);
+          setSaveIndicator('error');
+          showToast('No se pudo guardar: localStorage lleno.', 'error');
+        }
+        pushStateToCloud();
+      }
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return false;
+          const parsed = JSON.parse(raw);
+          if (!parsed || !Array.isArray(parsed.stations) || parsed.stations.length === 0) return false;
+          stations = parsed.stations;
+          if (parsed.ui) {
+            ui.activeStationId = parsed.ui.activeStationId || stations[0].id;
+            ui.activeMainTab = parsed.ui.activeMainTab || 'stations';
+            ui.activeStationTab = parsed.ui.activeStationTab || 'checklist';
+          }
+          return true;
+        } catch (err) {
+          console.error('No se pudo restaurar el estado guardado:', err);
+          return false;
+        }
+      }
+
+      function setSaveIndicator(status) {
+        const dot = document.getElementById('save-dot');
+        const text = document.getElementById('save-text');
+        if (!dot || !text) return;
+        if (status === 'ok') {
+          dot.className = 'save-dot bg-emerald-400';
+          text.textContent = 'Guardado ' + new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+        } else {
+          dot.className = 'save-dot bg-rose-400';
+          text.textContent = 'Error al guardar';
+        }
+      }
+
+      function commit() {
+        saveState();
+        renderAll();
+      }
+
+      const SYNC_CONFIG_KEY = 'metrorrey_sync_config_v1';
+      const SYNC_DOC_PATH = { collection: 'metrorrey_shared', doc: 'project_data' };
+
+      let syncDb = null;
+      let syncUnsubscribe = null;
+      let syncApplyingRemote = false;
+
+      function setSyncIndicator(status, detail) {
+        const btn = document.getElementById('sync-indicator');
+        const text = document.getElementById('sync-text');
+        if (!btn || !text) return;
+        const icon = btn.querySelector('i');
+        const styles = {
+          disabled: { cls: 'text-slate-500', label: 'Sin sincronizar', iconName: 'cloud-off' },
+          connecting: { cls: 'text-amber-400', label: 'Conectando…', iconName: 'cloud' },
+          ok: { cls: 'text-emerald-400', label: 'Sincronizado', iconName: 'cloud' },
+          error: { cls: 'text-rose-400', label: detail || 'Error', iconName: 'cloud-off' }
+        };
+        const s = styles[status] || styles.disabled;
+        text.textContent = s.label;
+        if (icon) { icon.setAttribute('data-lucide', s.iconName); icon.className = `w-3 h-3 ${s.cls}`; }
+        safeCreateIcons();
+      }
+
+      function openSyncModal() {
+        const savedConfig = localStorage.getItem(SYNC_CONFIG_KEY);
+        document.getElementById('sync-config-input').value = savedConfig || '';
+        document.getElementById('sync-disconnect-btn').classList.toggle('hidden', !savedConfig);
+        renderSyncStatusBanner();
+        document.getElementById('modal-sync').classList.remove('hidden');
+        document.getElementById('modal-sync').classList.add('flex');
+        safeCreateIcons();
+      }
+
+      function closeSyncModal() {
+        document.getElementById('modal-sync').classList.add('hidden');
+        document.getElementById('modal-sync').classList.remove('flex');
+      }
+
+      function renderSyncStatusBanner() {
+        const banner = document.getElementById('sync-status-banner');
+        if (!banner) return;
+        if (syncDb) {
+          banner.className = 'p-3 rounded-xl border text-xs font-bold flex items-center gap-2 bg-emerald-50 border-emerald-200 text-emerald-700';
+          banner.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Conectado — datos compartidos en tiempo real.';
+        } else {
+          banner.className = 'p-3 rounded-xl border text-xs font-bold flex items-center gap-2 bg-slate-50 border-slate-200 text-slate-600';
+          banner.innerHTML = '<i data-lucide="info" class="w-4 h-4"></i> No conectado — guardado localmente.';
+        }
+        safeCreateIcons();
+      }
+
+      function parseFirebaseConfigText(text) {
+        let trimmed = text.trim();
+        if (!trimmed) throw new Error('Pega tu configuración de Firebase primero.');
+        trimmed = trimmed.replace(/^(?:export\s+)?(?:const|let|var)\s+\w+\s*=\s*/, '').replace(/;\s*$/, '');
+        const obj = Function(`"use strict"; return (${trimmed});`)();
+        if (!obj || !obj.apiKey || !obj.projectId) throw new Error('Configuración de Firebase inválida.');
+        return obj;
+      }
+
+      function connectSync() {
+        action('conectar sincronización', () => {
+          const text = document.getElementById('sync-config-input').value;
+          let config = parseFirebaseConfigText(text);
+          setSyncIndicator('connecting');
+          startFirebaseSync(config, true);
+        });
+      }
+
+      function disableSync() {
+        action('desconectar sincronización', () => {
+          if (syncUnsubscribe) { syncUnsubscribe(); syncUnsubscribe = null; }
+          syncDb = null;
+          localStorage.removeItem(SYNC_CONFIG_KEY);
+          setSyncIndicator('disabled');
+          renderSyncStatusBanner();
+          document.getElementById('sync-disconnect-btn').classList.add('hidden');
+          showToast('Sincronización desconectada.', 'info');
+        });
+      }
+
+      let pendingSyncConflict = null;
+
+      function summarizeStationsForConflict(list) {
+        return `${list.length} estación(es) · ${list.reduce((sum, st) => sum + (st.checklist ? st.checklist.length : 0), 0)} señal(es)`;
+      }
+
+      function resolveSyncConflict(choice) {
+        action('resolver conflicto de sincronización', () => {
+          if (!pendingSyncConflict) return;
+          document.getElementById('modal-sync-conflict').classList.add('hidden');
+          document.getElementById('modal-sync-conflict').classList.remove('flex');
+          if (choice === 'cloud') {
+            syncApplyingRemote = true;
+            stations = pendingSyncConflict.cloudStations;
+            stations.forEach(st => ensureStationDefaults(st));
+            stations.forEach(st => st.checklist.forEach(item => recalculateItem(item)));
+            if (!stations.some(st => st.id === ui.activeStationId)) ui.activeStationId = stations[0].id;
+            saveState();
+            renderAll();
+            syncApplyingRemote = false;
+          } else {
+            commit();
+          }
+          pendingSyncConflict = null;
+        });
+      }
+
+      function startFirebaseSync(config, isInitialConnect) {
+        if (typeof firebase === 'undefined') {
+          setSyncIndicator('error', 'Firebase no cargó');
+          return;
+        }
+        try {
+          if (syncUnsubscribe) { syncUnsubscribe(); syncUnsubscribe = null; }
+          const appName = 'metrorrey-' + Date.now();
+          const app = firebase.initializeApp(config, appName);
+          syncDb = firebase.firestore(app);
+          const docRef = syncDb.collection(SYNC_DOC_PATH.collection).doc(SYNC_DOC_PATH.doc);
+
+          syncUnsubscribe = docRef.onSnapshot(snap => {
+            setSyncIndicator('ok');
+            const data = snap.data();
+            const cloudStations = (data && Array.isArray(data.stations) && data.stations.length > 0) ? data.stations : null;
+            if (isInitialConnect) {
+              localStorage.setItem(SYNC_CONFIG_KEY, document.getElementById('sync-config-input').value.trim());
+              renderSyncStatusBanner();
+              document.getElementById('sync-disconnect-btn').classList.remove('hidden');
+              isInitialConnect = false;
+              if (!cloudStations) { pushStateToCloud(); return; }
+              if (JSON.stringify(cloudStations) !== JSON.stringify(stations)) {
+                pendingSyncConflict = { cloudStations, localStations: stations };
+                document.getElementById('sync-conflict-cloud-summary').textContent = summarizeStationsForConflict(cloudStations);
+                document.getElementById('sync-conflict-local-summary').textContent = summarizeStationsForConflict(stations);
+                closeSyncModal();
+                document.getElementById('modal-sync-conflict').classList.remove('hidden');
+                document.getElementById('modal-sync-conflict').classList.add('flex');
+                safeCreateIcons();
+                return;
+              }
+            }
+            if (!cloudStations) return;
+            syncApplyingRemote = true;
+            stations = cloudStations;
+            stations.forEach(st => ensureStationDefaults(st));
+            stations.forEach(st => st.checklist.forEach(item => recalculateItem(item)));
+            if (!stations.some(st => st.id === ui.activeStationId)) ui.activeStationId = stations[0].id;
+            saveState();
+            renderAll();
+            syncApplyingRemote = false;
+          }, err => {
+            setSyncIndicator('error', 'Error de conexión');
+          });
+        } catch (err) {
+          setSyncIndicator('error', 'Configuración inválida');
+        }
+      }
+
+      function pushStateToCloud() {
+        if (!syncDb || syncApplyingRemote) return;
+        syncDb.collection(SYNC_DOC_PATH.collection).doc(SYNC_DOC_PATH.doc)
+          .set({ stations, updatedAt: new Date().toISOString() })
+          .catch(err => setSyncIndicator('error', 'Error al guardar'));
+      }
+
+      function autoConnectSyncIfConfigured() {
+        const saved = localStorage.getItem(SYNC_CONFIG_KEY);
+        if (!saved) return;
+        try {
+          const config = parseFirebaseConfigText(saved);
+          setSyncIndicator('connecting');
+          startFirebaseSync(config, false);
+        } catch (err) {
+          setSyncIndicator('error', 'Config. guardada inválida');
+        }
+      }
+
+      function action(label, fn) {
+        try { fn(); } catch (err) { console.error(`[${label}]`, err); showToast(`Error en ${label}`, 'error'); }
+      }
+
+      function normalizeText(s) {
+        return (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+      }
+
+      function ensureStationDefaults(st) {
+        if (!Array.isArray(st.checklist)) st.checklist = [];
+        if (!st.minuta) {
+          st.minuta = { fecha: '2026-07-21', asistentes: 'Supervisión Metrorrey', acuerdos: 'Revisión general de avances.' };
+        }
+        if (!st.presupuesto) {
+          st.presupuesto = { base: 0, prices: {} };
+        }
+        if (!st.presupuesto.prices) st.presupuesto.prices = {};
+        return st;
+      }
+
+      function getStation(id) { return stations.find(s => s.id === id) || stations[0]; }
+      function getActiveStation() { return getStation(ui.activeStationId); }
+      function clampInt(val, min, max) {
+        let n = Math.round(Number(val));
+        if (isNaN(n)) n = 0;
+        if (n < min) n = min;
+        if (max !== undefined && n > max) n = max;
+        return n;
+      }
+
+      function getTotalPzas(item) {
+        const c = Math.max(0, Number(item.cantContrato) || 0);
+        const a = Math.max(0, Number(item.cantActualizada) || 0);
+        return a > 0 ? a : c;
+      }
+
+      function recalculateItem(item, changedField) {
+        item.cantContrato = clampInt(item.cantContrato, 0);
+        item.cantActualizada = clampInt(item.cantActualizada, 0);
+        if (changedField === 'instaladasVal' || changedField === 'faltanVal') {
+          let total = getTotalPzas(item);
+          if (changedField === 'instaladasVal') {
+            const desired = clampInt(item.instaladasVal, 0);
+            if (desired > total) { item.cantActualizada = desired; total = getTotalPzas(item); }
+            item.instaladasVal = clampInt(desired, 0, total);
+            item.faltanVal = total - item.instaladasVal;
+          } else {
+            const desiredFaltan = clampInt(item.faltanVal, 0);
+            const desiredTotal = item.instaladasVal + desiredFaltan;
+            if (desiredTotal > total) { item.cantActualizada = desiredTotal; total = getTotalPzas(item); }
+            item.faltanVal = clampInt(desiredFaltan, 0, total);
+            item.instaladasVal = total - item.faltanVal;
+          }
+        } else {
+          const total = getTotalPzas(item);
+          item.instaladasVal = clampInt(item.instaladasVal, 0, total);
+          item.faltanVal = total - item.instaladasVal;
+        }
+        item.aditivaVal = Math.max(0, item.cantActualizada - item.cantContrato);
+        item.deductivaVal = Math.max(0, item.cantContrato - item.cantActualizada);
+        const finalTotal = getTotalPzas(item);
+        item.instalacionOk = finalTotal > 0 && item.instaladasVal >= finalTotal;
+        return item;
+      }
+
+      function isItemInconsistent(item) {
+        const total = getTotalPzas(item);
+        if (total === 0 && (item.instaladasVal > 0 || item.instalacionOk)) return true;
+        if (item.instaladasVal + item.faltanVal !== total) return true;
+        if (item.done && !item.instalacionOk) return true;
+        return false;
+      }
+
+      function buildChecklistItem(idx, currentSenId, curs, desc, cantContrato, cantActualizada, obs, customImgs) {
+        const item = {
+          id: Date.now() + idx + Math.floor(Math.random() * 1000),
+          clavePartida: currentSenId || `SEÑ.${idx + 1}`,
+          codigo: curs || `IMP-${idx + 1}`,
+          desc: desc || curs || 'Señal importada',
+          criterio: '', cantContrato: Number(cantContrato) || 0, cantActualizada: Number(cantActualizada) || 0,
+          listoImpresion: false, instalacionOk: false,
+          instaladasVal: 0, faltanVal: 0, aditivaVal: 0, deductivaVal: 0,
+          done: false, notas: obs || '', customImg: (customImgs && customImgs.length > 0) ? customImgs[0] : null, customImgs: customImgs || [], instalacionImg: null
+        };
+        recalculateItem(item);
+        return item;
+      }
+
+      function safeCreateIcons() {
+        if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+      }
+
+      function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const toast = document.createElement('div');
+        const bg = type === 'error' ? 'bg-rose-600 text-white' : 'bg-slate-900 text-white';
+        toast.className = `${bg} px-4 py-3 rounded-xl shadow-xl text-xs font-bold transition transform translate-y-2 pointer-events-auto flex items-center gap-2`;
+        toast.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i> <span></span>`;
+        toast.querySelector('span').textContent = message;
+        container.appendChild(toast);
+        safeCreateIcons();
+        setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3500);
+      }
+
+      function renderAll() {
+        renderStationsTabs();
+        if (ui.activeMainTab === 'stations') renderActiveStationView();
+        else if (ui.activeMainTab === 'analytics') renderAnalytics();
+        else if (ui.activeMainTab === 'presupuesto') renderBudgetView();
+        else if (ui.activeMainTab === 'resumen') renderResumenView();
+        safeCreateIcons();
+      }
+
+      const NAV_TABS = ['stations', 'analytics', 'presupuesto', 'resumen'];
+
+      function switchMainTab(tab) {
+        action('cambiar de pestaña', () => {
+          ui.activeMainTab = tab;
+          NAV_TABS.forEach(t => {
+            const btn = document.getElementById(`nav-${t}`);
+            if (!btn) return;
+            btn.className = t === tab
+              ? 'px-4 py-2 rounded-lg text-xs font-medium transition flex items-center gap-2 tab-btn-active bg-slate-700/50 text-white'
+              : 'px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition flex items-center gap-2';
+          });
+          NAV_TABS.forEach(t => document.getElementById(`view-${t}`).classList.toggle('hidden', t !== tab));
+          if (tab === 'analytics') renderAnalytics();
+          if (tab === 'presupuesto') renderBudgetView();
+          if (tab === 'resumen') renderResumenView();
+          safeCreateIcons();
+          saveState();
+        });
+      }
+
+      function renderStationsTabs() {
+        const container = document.getElementById('stations-tabs-container');
+        container.innerHTML = stations.map(st => {
+          const active = ui.activeStationId === st.id;
+          return `
+          <div class="relative group shrink-0">
+            <button onclick="setActiveStation('${st.id}')" class="pl-2.5 pr-4 py-2 rounded-xl transition border flex items-center gap-2.5 text-left ${active ? 'station-tab-active border-sky-600' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'}">
+              <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${active ? 'bg-white/20' : 'bg-white border border-slate-200'}">
+                <i data-lucide="building-2" class="w-4 h-4 ${active ? 'text-white' : 'text-sky-600'}"></i>
+              </div>
+              <div>
+                <div class="text-xs font-black leading-tight">${st.name}</div>
+                <div class="text-[10px] font-bold leading-tight uppercase tracking-wide ${active ? 'text-sky-100' : 'text-slate-400'}">${formatMoney(st.presupuesto.base)}</div>
+              </div>
+            </button>
+            <button onclick="deleteStation('${st.id}')" title="Eliminar estación" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white border border-rose-300 text-rose-500 hover:bg-rose-500 hover:text-white shadow flex items-center justify-center transition">
+              <i data-lucide="x" class="w-3 h-3"></i>
+            </button>
+            <button onclick="openEditStationModal('${st.id}')" title="Editar estación" class="absolute -top-1.5 -right-7 w-5 h-5 rounded-full bg-white border border-sky-300 text-sky-600 hover:bg-sky-600 hover:text-white shadow flex items-center justify-center transition">
+              <i data-lucide="pencil" class="w-3 h-3"></i>
+            </button>
+          </div>`;
+        }).join('');
+      }
+
+      function setActiveStation(id) {
+        action('cambiar de estación', () => {
+          ui.activeStationId = id;
+          ui.activeStationTab = 'checklist';
+          renderStationsTabs();
+          renderActiveStationView();
+          safeCreateIcons();
+          saveState();
+        });
+      }
+
+      function switchStationTab(tab) {
+        action('cambiar de sección', () => {
+          ui.activeStationTab = tab;
+          renderActiveStationView();
+          safeCreateIcons();
+          saveState();
+        });
+      }
+
+      function renderActiveStationView() {
+        const station = getActiveStation();
+        const container = document.getElementById('station-detail-container');
+        container.innerHTML = `
+          <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 rounded-xl bg-sky-600 text-white flex items-center justify-center font-black text-lg shadow-md">${station.code}</div>
+              <div>
+                <div class="flex items-center gap-3">
+                  <h2 class="text-xl font-bold text-slate-900">Estación ${station.name}</h2>
+                  <span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-0.5 rounded-full font-bold">${station.status}</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">Presupuesto Base: <b>${formatMoney(station.presupuesto.base)}</b> • ${station.line}</p>
+              </div>
+            </div>
+            <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+              <button onclick="switchStationTab('checklist')" class="px-4 py-2 rounded-lg text-xs font-bold transition ${ui.activeStationTab === 'checklist' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}">Tabla de Control y Señales</button>
+              <button onclick="switchStationTab('minuta')" class="px-4 py-2 rounded-lg text-xs font-bold transition ${ui.activeStationTab === 'minuta' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}">Minuta de Reunión</button>
+            </div>
+          </div>
+
+          <div id="subview-checklist" class="${ui.activeStationTab === 'checklist' ? 'flex' : 'hidden'} flex-col gap-4">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
+              <div class="flex flex-wrap items-center gap-3 flex-1">
+                <div class="relative min-w-[240px] flex-1">
+                  <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+                  <input type="text" id="chk-search-input" oninput="renderChecklistItems()" placeholder="Buscar por código CURS, partida o descripción..." class="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 bg-slate-50">
+                </div>
+                <select id="chk-filter-status" onchange="renderChecklistItems()" class="text-xs border border-slate-200 rounded-xl px-3 py-2 bg-slate-50">
+                  <option value="ALL">Todos los estados</option>
+                  <option value="CHECKED">Completados (OK)</option>
+                  <option value="UNCHECKED">Pendientes</option>
+                  <option value="INCONSISTENT">Con inconsistencias</option>
+                </select>
+              </div>
+              <button onclick="addChecklistItem()" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold shadow flex items-center gap-2 transition">
+                <i data-lucide="plus" class="w-4 h-4"></i> Agregar Registro
+              </button>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div class="overflow-x-auto">
+                <table class="w-full border-collapse text-left">
+                  <thead>
+                    <tr class="border-b-2 border-slate-800 text-slate-900 font-bold text-center">
+                      <th class="p-2.5 border-r border-slate-300 bg-slate-200 w-24">SEÑ.ID</th>
+                      <th class="p-2.5 border-r border-slate-300 bg-slate-200 w-44">CURS</th>
+                      <th class="p-2.5 border-r-2 border-slate-800 bg-slate-200">Señal &amp; Fotografía Real</th>
+                      <th class="p-2.5 border-r border-slate-300 table-control-header w-16">Contr.</th>
+                      <th class="p-2.5 border-r border-slate-300 table-control-header w-20">Actualiz.</th>
+                      <th class="p-2.5 border-r border-slate-300 bg-blue-100 text-blue-900 w-20">Impresión</th>
+                      <th class="p-3 border-r border-slate-300 bg-indigo-100 text-indigo-900 w-[26rem] text-center text-sm font-black">Instalación</th>
+                      <th class="p-2.5 border-r border-slate-300 bg-emerald-100 text-emerald-900 w-20">Aditiva</th>
+                      <th class="p-2.5 border-r border-slate-300 bg-rose-100 text-rose-900 w-20">Deductiva</th>
+                      <th class="p-2.5 border-r border-slate-300 table-control-header w-20">Check</th>
+                      <th class="p-2.5 table-control-header min-w-[320px]">Observaciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="checklist-table-body" class="divide-y border-slate-800 divide-slate-300 text-slate-800 font-sans"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mt-2">
+              <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="text-[11px] font-bold text-slate-500 uppercase">Total Partidas</div>
+                <div id="kpi-total" class="text-2xl font-black text-slate-800 mt-1.5">0</div>
+              </div>
+              <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="text-[11px] font-bold text-blue-600 uppercase">Listas Impresión</div>
+                <div id="kpi-impresion" class="text-2xl font-black text-blue-700 mt-1.5">0</div>
+              </div>
+              <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="text-[11px] font-bold text-emerald-600 uppercase">Instalación OK</div>
+                <div id="kpi-instalacion" class="text-2xl font-black text-emerald-700 mt-1.5">0</div>
+              </div>
+              <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="text-[11px] font-bold text-amber-600 uppercase">Verificadas</div>
+                <div id="kpi-verificadas" class="text-2xl font-black text-amber-700 mt-1.5">0</div>
+              </div>
+              <div class="bg-white p-5 rounded-2xl border-2 border-rose-200 shadow-sm">
+                <div class="text-[11px] font-bold text-rose-600 uppercase">Inconsistencias</div>
+                <div id="kpi-inconsistentes" class="text-2xl font-black text-rose-700 mt-1.5">0</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="subview-minuta" class="${ui.activeStationTab === 'minuta' ? 'flex' : 'hidden'} flex-col gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-4">
+              <div>
+                <h3 class="text-base font-bold text-slate-900">Minuta Oficial - Estación ${station.name}</h3>
+                <p class="text-xs text-slate-500">Registro de acuerdos y compromisos.</p>
+              </div>
+              <button onclick="exportStationMinutaPDF()" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow flex items-center gap-2 transition">
+                <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Minuta PDF
+              </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Fecha</label>
+                  <input type="date" id="minuta-fecha" value="${station.minuta.fecha}" onchange="updateMinutaField('fecha', this.value)" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Asistentes</label>
+                  <textarea id="minuta-asistentes" rows="4" onchange="updateMinutaField('asistentes', this.value)" class="w-full text-xs p-3 border border-slate-200 rounded-xl bg-slate-50"></textarea>
+                </div>
+              </div>
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Acuerdos</label>
+                  <textarea id="minuta-acuerdos" rows="6" onchange="updateMinutaField('acuerdos', this.value)" class="w-full text-xs p-3 border border-slate-200 rounded-xl bg-slate-50"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        document.getElementById('minuta-asistentes').value = station.minuta.asistentes;
+        document.getElementById('minuta-acuerdos').value = station.minuta.acuerdos;
+        renderChecklistItems();
+      }
+
+      function updateMinutaField(field, val) {
+        action('actualizar minuta', () => { getActiveStation().minuta[field] = val; commit(); });
+      }
+
+      function getSignalGraphicHtml(desc, code, customImg, customImgs, itemId) {
+        let imgs = customImgs && customImgs.length > 0 ? customImgs : (customImg ? [customImg] : []);
+        if (imgs.length > 0) {
+          return `<div class="flex flex-wrap items-center gap-1.5 max-w-xs">
+            ${imgs.map((img, idx) => `
+              <img src="${img}" onclick="openImageLightbox('${img}', '${(code + ' - ' + desc).replace(/'/g, "\\'")}')" class="w-20 h-16 rounded-lg object-contain bg-slate-100 cursor-pointer border-2 border-slate-300 shadow hover:opacity-90">
+            `).join('')}
+            <button onclick="removeSignalPhoto(${itemId})" class="text-[10px] text-rose-600 hover:underline font-bold w-full text-left">Quitar fotos (${imgs.length})</button>
+          </div>`;
+        }
+        return `
+          <div class="flex items-center gap-3">
+            <div class="w-28 h-20 rounded-xl bg-emerald-600 text-white flex flex-col items-center justify-center p-2 shadow-md">
+              <i data-lucide="info" class="w-8 h-8"></i>
+              <span class="text-[10px] font-mono font-bold mt-1">${code}</span>
+            </div>
+            <div class="flex-1">
+              <div class="text-xs font-bold text-slate-900 line-clamp-2">${desc}</div>
+              <button onclick="document.getElementById('sig-upload-${itemId}').click()" class="text-xs text-sky-600 font-bold flex items-center gap-1 mt-1 bg-sky-50 px-2 py-1 rounded border border-sky-200 w-fit">
+                <i data-lucide="camera" class="w-3.5 h-3.5"></i> Subir foto real
+              </button>
+              <input type="file" id="sig-upload-${itemId}" accept="image/*" class="hidden" onchange="uploadSignalPhoto(${itemId}, event)">
+            </div>
+          </div>`;
+      }
+
+      function renderChecklistItems() {
+        const station = getActiveStation();
+        const tbody = document.getElementById('checklist-table-body');
+        if (!tbody) return;
+        const searchVal = normalizeText(document.getElementById('chk-search-input')?.value || '');
+        const statusVal = document.getElementById('chk-filter-status')?.value || 'ALL';
+
+        station.checklist.forEach(item => recalculateItem(item));
+
+        if (station.checklist.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 text-xs">Sin registros. Carga tu tabla de control con imágenes para comenzar.</td></tr>`;
+          updateChecklistSummary([]);
+          return;
+        }
+
+        const filtered = station.checklist.filter(item => {
+          const haystack = normalizeText([item.clavePartida, item.codigo, item.desc, item.notas].join(' '));
+          const matchesSearch = haystack.includes(searchVal);
+          let matchesStatus = true;
+          if (statusVal === 'CHECKED') matchesStatus = item.done;
+          else if (statusVal === 'UNCHECKED') matchesStatus = !item.done;
+          else if (statusVal === 'INCONSISTENT') matchesStatus = isItemInconsistent(item);
+          return matchesSearch && matchesStatus;
+        });
+
+        updateChecklistSummary(station.checklist);
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="11" class="p-6 text-center text-slate-400 text-xs">No se encontraron registros.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = filtered.map(item => {
+          const totalPzas = getTotalPzas(item);
+          const inconsistent = isItemInconsistent(item);
+          return `
+            <tr class="hover:bg-slate-50 transition text-xs border-b border-slate-300 ${inconsistent ? 'row-inconsistent' : ''}">
+              <td class="p-2.5 border-r border-slate-300 font-bold font-mono text-center bg-slate-50/50 w-24">
+                ${item.clavePartida || 'SEÑ.1.01'}
+                ${inconsistent ? '<div class="text-rose-600"><i data-lucide="alert-triangle" class="w-3.5 h-3.5 mx-auto"></i></div>' : ''}
+              </td>
+              <td class="p-2.5 border-r border-slate-300 font-mono text-[11px] text-center w-48 break-all">${item.codigo || '-'}</td>
+              <td class="p-2.5 border-r-2 border-slate-800">${getSignalGraphicHtml(item.desc, item.codigo, item.customImg, item.customImgs, item.id)}</td>
+              <td class="p-2.5 border-r border-slate-300 text-center font-bold w-16">
+                <input type="number" min="0" value="${item.cantContrato}" onchange="updateChecklistField(${item.id}, 'cantContrato', this.value)" class="w-12 text-center border rounded p-1 font-bold">
+              </td>
+              <td class="p-2.5 border-r border-slate-300 text-center font-bold text-sky-800 w-20">
+                <input type="number" min="0" value="${item.cantActualizada}" onchange="updateChecklistField(${item.id}, 'cantActualizada', this.value)" class="w-14 text-center border rounded p-1 font-bold text-sky-700">
+              </td>
+              <td class="p-2.5 border-r border-slate-300 text-center w-20 bg-blue-50/30">
+                <input type="checkbox" ${item.listoImpresion ? 'checked' : ''} onchange="updateChecklistField(${item.id}, 'listoImpresion', this.checked)" class="w-6 h-6 text-blue-600 rounded cursor-pointer">
+              </td>
+              <td class="p-3 border-r border-slate-300 text-center w-[26rem] bg-indigo-50/50">
+                <div class="flex flex-col items-center gap-3 p-3.5 bg-white rounded-2xl border-2 border-indigo-300 shadow-md">
+                  <label class="flex items-center gap-2 w-full px-1">
+                    <input type="checkbox" ${item.instalacionOk ? 'checked' : ''} disabled class="w-6 h-6 text-indigo-600 rounded opacity-90">
+                    <span class="text-sm font-black ${item.instalacionOk ? 'text-indigo-700' : 'text-slate-800'}">Instalación OK</span>
+                  </label>
+                  <div class="flex gap-3 w-full font-mono">
+                    <div class="flex-1 bg-indigo-50 p-2.5 rounded-xl border-2 border-indigo-300 text-center">
+                      <div class="text-xs text-indigo-900 font-extrabold mb-1">Instaladas</div>
+                      <input type="number" min="0" max="${totalPzas}" value="${item.instaladasVal || 0}" onchange="updateChecklistField(${item.id}, 'instaladasVal', this.value)" class="w-full text-center border-2 border-indigo-500 rounded-xl font-black bg-white py-2 text-lg">
+                    </div>
+                    <div class="flex-1 bg-amber-50 p-2.5 rounded-xl border-2 border-amber-300 text-center">
+                      <div class="text-xs text-amber-900 font-extrabold mb-1">Faltan</div>
+                      <input type="number" min="0" max="${totalPzas}" value="${item.faltanVal || 0}" onchange="updateChecklistField(${item.id}, 'faltanVal', this.value)" class="w-full text-center border-2 border-amber-500 rounded-xl font-black bg-white py-2 text-lg">
+                    </div>
+                  </div>
+                  ${item.instalacionImg ? `
+                    <div class="flex items-center gap-3 w-full justify-between bg-indigo-50 p-2 rounded-xl border">
+                      <img src="${item.instalacionImg}" onclick="openImageLightbox('${item.instalacionImg}', 'Evidencia')" class="w-14 h-14 object-contain cursor-pointer">
+                      <button onclick="removeInstallationPhoto(${item.id})" class="text-xs text-rose-600 font-bold">Quitar</button>
+                    </div>` : `
+                    <button onclick="document.getElementById('inst-upload-${item.id}').click()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 shadow w-full font-bold">
+                      <i data-lucide="camera" class="w-4 h-4"></i> Subir Foto de Instalación
+                    </button>
+                    <input type="file" id="inst-upload-${item.id}" accept="image/*" class="hidden" onchange="uploadInstallationPhoto(${item.id}, event)">`
+                  }
+                </div>
+              </td>
+              <td class="p-2.5 border-r border-slate-300 text-center w-20 bg-emerald-50/30">
+                <div class="w-14 mx-auto text-center border border-emerald-300 rounded p-1 font-bold text-emerald-700 bg-emerald-50">${item.aditivaVal}</div>
+              </td>
+              <td class="p-2.5 border-r border-slate-300 text-center w-20 bg-rose-50/30">
+                <div class="w-14 mx-auto text-center border border-rose-300 rounded p-1 font-bold text-rose-700 bg-rose-50">${item.deductivaVal}</div>
+              </td>
+              <td class="p-2.5 border-r border-slate-300 text-center w-20 bg-amber-50/30">
+                <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleChecklistItemDone(${item.id})" class="w-5 h-5 text-amber-600 rounded cursor-pointer">
+              </td>
+              <td class="p-2.5 min-w-[320px]">
+                <div class="flex items-start gap-2">
+                  <textarea onchange="updateChecklistField(${item.id}, 'notas', this.value)" placeholder="Observaciones..." class="w-full text-xs p-3 border rounded-lg bg-white resize-y min-h-[80px]"></textarea>
+                  <button onclick="deleteChecklistItem(${item.id})" class="text-slate-400 hover:text-rose-600 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+              </td>
+            </tr>`;
+        }).join('');
+
+        const textareas = tbody.querySelectorAll('textarea');
+        filtered.forEach((item, idx) => { if (textareas[idx]) textareas[idx].value = item.notas || ''; });
+        safeCreateIcons();
+      }
+
+      function updateChecklistSummary(checklist) {
+        document.getElementById('kpi-total').textContent = checklist.length;
+        document.getElementById('kpi-impresion').textContent = checklist.filter(i => i.listoImpresion).length;
+        document.getElementById('kpi-instalacion').textContent = checklist.filter(i => i.instalacionOk).length;
+        document.getElementById('kpi-verificadas').textContent = `${checklist.filter(i => i.done).length} / ${checklist.length}`;
+        document.getElementById('kpi-inconsistentes').textContent = checklist.filter(i => isItemInconsistent(i)).length;
+      }
+
+      function updateChecklistField(id, field, val) {
+        action('actualizar registro', () => {
+          const station = getActiveStation();
+          const item = station.checklist.find(i => i.id === id);
+          if (!item) return;
+          if (field === 'notas') { item.notas = val; commit(); return; }
+          if (field === 'listoImpresion') { item.listoImpresion = !!val; commit(); return; }
+          item[field] = val;
+          recalculateItem(item, field);
+          commit();
+        });
+      }
+
+      function toggleChecklistItemDone(id) {
+        action('verificar registro', () => {
+          const station = getActiveStation();
+          const item = station.checklist.find(i => i.id === id);
+          if (!item) return;
+          if (!item.done && !item.instalacionOk) {
+            showToast('Instalación incompleta.', 'error');
+            renderChecklistItems();
+            return;
+          }
+          item.done = !item.done;
+          commit();
+        });
+      }
+
+      function deleteChecklistItem(id) {
+        action('eliminar registro', () => {
+          const station = getActiveStation();
+          requestConfirmation('¿Seguro que deseas eliminar este registro?', () => {
+            station.checklist = station.checklist.filter(i => i.id !== id);
+            commit();
+          });
+        });
+      }
+
+      function addChecklistItem() {
+        action('agregar registro', () => {
+          const station = getActiveStation();
+          station.checklist.push(buildChecklistItem(station.checklist.length, `SEÑ.${station.checklist.length + 1}`, `M2-${station.code}-S0${station.checklist.length + 1}`, 'Nueva Señal', 1, 1));
+          commit();
+        });
+      }
+
+      function uploadSignalPhoto(id, event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => action('cargar foto', () => {
+          const item = getActiveStation().checklist.find(i => i.id === id);
+          if (!item.customImgs) item.customImgs = [];
+          item.customImgs.push(e.target.result);
+          item.customImg = item.customImgs[0];
+          commit();
+        });
+        reader.readAsDataURL(file);
+      }
+
+      function removeSignalPhoto(id) {
+        action('quitar foto', () => {
+          const item = getActiveStation().checklist.find(i => i.id === id);
+          item.customImg = null;
+          item.customImgs = [];
+          commit();
+        });
+      }
+
+      function uploadInstallationPhoto(id, event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => action('cargar foto instalación', () => {
+          getActiveStation().checklist.find(i => i.id === id).instalacionImg = e.target.result;
+          commit();
+        });
+        reader.readAsDataURL(file);
+      }
+
+      function removeInstallationPhoto(id) {
+        action('quitar foto instalación', () => { getActiveStation().checklist.find(i => i.id === id).instalacionImg = null; commit(); });
+      }
+
+      function openImageLightbox(imgSrc, titleText) {
+        document.getElementById('lightbox-img').src = imgSrc;
+        document.getElementById('lightbox-title').textContent = titleText;
+        document.getElementById('modal-image-lightbox').classList.remove('hidden');
+        document.getElementById('modal-image-lightbox').classList.add('flex');
+      }
+
+      function closeImageLightbox() {
+        document.getElementById('modal-image-lightbox').classList.add('hidden');
+        document.getElementById('modal-image-lightbox').classList.remove('flex');
+      }
+
+      let editingStationId = null;
+
+      function openNewStationModal() {
+        editingStationId = null;
+        document.getElementById('station-modal-title').textContent = 'Nueva Estación';
+        document.getElementById('new-station-name').value = '';
+        document.getElementById('modal-new-station').classList.remove('hidden');
+        document.getElementById('modal-new-station').classList.add('flex');
+      }
+
+      function openEditStationModal(id) {
+        const station = stations.find(st => st.id === id);
+        if (!station) return;
+        editingStationId = id;
+        document.getElementById('station-modal-title').textContent = `Editar Estación: ${station.name}`;
+        document.getElementById('new-station-name').value = station.name;
+        document.getElementById('modal-new-station').classList.remove('hidden');
+        document.getElementById('modal-new-station').classList.add('flex');
+      }
+
+      function closeNewStationModal() {
+        document.getElementById('modal-new-station').classList.add('hidden');
+        document.getElementById('modal-new-station').classList.remove('flex');
+        editingStationId = null;
+      }
+
+      function saveNewStation() {
+        action('guardar estación', () => {
+          const name = (document.getElementById('new-station-name').value || '').trim();
+          if (!name) return;
+          if (editingStationId) {
+            const station = stations.find(st => st.id === editingStationId);
+            if (station) station.name = name;
+            closeNewStationModal();
+            commit();
+            return;
+          }
+          const slug = normalizeText(name).replace(/[^a-z0-9]+/g, '_');
+          let id = slug, counter = 2;
+          while (stations.some(st => st.id === id)) { id = `${slug}_${counter}`; counter++; }
+          const code = normalizeText(name).replace(/[^a-z]/g, '').slice(0, 3).toUpperCase() || 'EST';
+          const newStation = { id, name, code, line: 'Línea 2', status: 'Programada', progress: 0, checklist: [] };
+          ensureStationDefaults(newStation);
+          stations.push(newStation);
+          ui.activeStationId = newStation.id;
+          closeNewStationModal();
+          commit();
+        });
+      }
+
+      function openBulkStationsModal() {
+        document.getElementById('bulk-stations-input').value = '';
+        document.getElementById('modal-bulk-stations').classList.remove('hidden');
+        document.getElementById('modal-bulk-stations').classList.add('flex');
+      }
+
+      function closeBulkStationsModal() {
+        document.getElementById('modal-bulk-stations').classList.add('hidden');
+        document.getElementById('modal-bulk-stations').classList.remove('flex');
+      }
+
+      function processBulkStations() {
+        action('importar estaciones', () => {
+          const text = document.getElementById('bulk-stations-input').value;
+          const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+          let created = 0;
+          lines.forEach(name => {
+            if (!stations.some(st => normalizeText(st.name) === normalizeText(name))) {
+              const id = normalizeText(name).replace(/[^a-z0-9]+/g, '_');
+              const code = normalizeText(name).replace(/[^a-z]/g, '').slice(0, 3).toUpperCase() || 'EST';
+              const st = { id, name, code, line: 'Línea 2', status: 'Programada', progress: 0, checklist: [] };
+              ensureStationDefaults(st);
+              stations.push(st);
+              created++;
+            }
+          });
+          closeBulkStationsModal();
+          commit();
+          showToast(`Se crearon ${created} estaciones nuevas.`, 'success');
+        });
+      }
+
+      let pendingConfirmAction = null;
+
+      function requestConfirmation(message, onConfirm) {
+        pendingConfirmAction = onConfirm;
+        document.getElementById('confirm-action-message').textContent = message;
+        document.getElementById('modal-confirm-action').classList.remove('hidden');
+        document.getElementById('modal-confirm-action').classList.add('flex');
+      }
+
+      function closeConfirmActionModal() {
+        document.getElementById('modal-confirm-action').classList.add('hidden');
+        document.getElementById('modal-confirm-action').classList.remove('flex');
+        pendingConfirmAction = null;
+      }
+
+      function runConfirmedAction() {
+        const fn = pendingConfirmAction;
+        closeConfirmActionModal();
+        if (fn) fn();
+      }
+
+      function deleteStation(id) {
+        action('eliminar estación', () => {
+          if (stations.length <= 1) { showToast('No puedes eliminar la última estación.', 'error'); return; }
+          const station = stations.find(st => st.id === id);
+          requestConfirmation(`¿Eliminar la estación "${station.name}"?`, () => {
+            stations = stations.filter(st => st.id !== id);
+            if (ui.activeStationId === id) ui.activeStationId = stations[0].id;
+            commit();
+          });
+        });
+      }
+
+      let chartOverallInstance = null;
+      let analyticsSelectedStationId = null;
+
+      function renderStationProgressCard() {
+        const select = document.getElementById('analytics-station-select');
+        const id = (select && select.value) || analyticsSelectedStationId || stations[0].id;
+        analyticsSelectedStationId = id;
+        const station = stations.find(s => s.id === id) || stations[0];
+        const total = station.checklist.length;
+        const done = station.checklist.filter(i => i.instalacionOk).length;
+        const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+        document.getElementById('analytics-station-progress-pct').textContent = `${pct}%`;
+        document.getElementById('analytics-station-progress-name').textContent = `${station.name}`;
+        document.getElementById('analytics-station-progress-bar').style.width = `${pct}%`;
+        document.getElementById('analytics-station-progress-detail').textContent = `${done} de ${total} instalaciones OK`;
+      }
+
+      function renderAnalytics() {
+        const totalContrato = stations.reduce((acc, st) => acc + st.checklist.reduce((a, i) => a + (i.cantContrato || 0), 0), 0);
+        const totalImpresion = stations.reduce((acc, st) => acc + st.checklist.filter(i => i.listoImpresion).length, 0);
+        const totalInstaladas = stations.reduce((acc, st) => acc + st.checklist.filter(i => i.instalacionOk).length, 0);
+
+        document.getElementById('stat-total-contrato').textContent = totalContrato;
+        document.getElementById('stat-total-impresion').textContent = totalImpresion;
+        document.getElementById('stat-total-instaladas').textContent = totalInstaladas;
+
+        const select = document.getElementById('analytics-station-select');
+        select.innerHTML = stations.map(st => `<option value="${st.id}" ${st.id === analyticsSelectedStationId ? 'selected' : ''}>${st.name}</option>`).join('');
+        renderStationProgressCard();
+
+        const ctxOv = document.getElementById('analyticsChartOverall').getContext('2d');
+        if (chartOverallInstance) chartOverallInstance.destroy();
+        chartOverallInstance = new Chart(ctxOv, {
+          type: 'doughnut',
+          data: { labels: ['Instaladas OK', 'En Impresión', 'Pendientes'], datasets: [{ data: [totalInstaladas, totalImpresion, Math.max(0, totalContrato - totalInstaladas)], backgroundColor: ['#10b981', '#0ea5e9', '#cbd5e1'] }] },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      }
+
+      function formatMoney(n) {
+        return '$' + (Number(n) || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+
+      function getBudgetTotals(station) {
+        const base = Number(station.presupuesto.base) || 0;
+        const prices = station.presupuesto.prices || {};
+        
+        let montoAditivas = 0;
+        let montoDeductivas = 0;
+        let totalAditivasPzas = 0;
+        let totalDeductivasPzas = 0;
+
+        station.checklist.forEach(item => {
+          recalculateItem(item);
+          const key = normalizeText(item.codigo);
+          const unitPrice = Number(prices[key]) || 0;
+
+          if (item.aditivaVal > 0) {
+            totalAditivasPzas += item.aditivaVal;
+            montoAditivas += (item.aditivaVal * unitPrice);
+          }
+          if (item.deductivaVal > 0) {
+            totalDeductivasPzas += item.deductivaVal;
+            montoDeductivas += (item.deductivaVal * unitPrice);
+          }
+        });
+
+        const ajustado = base + montoAditivas - montoDeductivas;
+
+        return {
+          base,
+          totalAditivasPzas,
+          totalDeductivasPzas,
+          montoAditivas,
+          montoDeductivas,
+          ajustado,
+          pricesCount: Object.keys(prices).length
+        };
+      }
+
+      function renderBudgetView() {
+        const select = document.getElementById('budget-station-select');
+        select.innerHTML = stations.map(st => `<option value="${st.id}" ${st.id === ui.activeStationId ? 'selected' : ''}>${st.name}</option>`).join('');
+        renderBudgetDetail();
+      }
+
+      function setBudgetStation(id) {
+        action('cambiar estación', () => { ui.activeStationId = id; renderBudgetDetail(); saveState(); });
+      }
+
+      function renderBudgetDetail() {
+        const station = getActiveStation();
+        const container = document.getElementById('budget-detail-container');
+        const totals = getBudgetTotals(station);
+        
+        container.innerHTML = `
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="text-[11px] font-bold text-slate-500 uppercase">Presupuesto Inicial (Base)</div>
+              <input type="number" min="0" step="0.01" value="${totals.base}" onchange="updateBudgetBase(this.value)" class="text-xl font-black text-slate-800 w-full bg-slate-50 border border-slate-200 rounded-xl p-2 mt-1">
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-emerald-200 shadow-sm">
+              <div class="text-[11px] font-bold text-emerald-600 uppercase">Aditivas (${totals.totalAditivasPzas} pzas)</div>
+              <div class="text-xl font-black text-emerald-700 mt-1.5">${formatMoney(totals.montoAditivas)}</div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-rose-200 shadow-sm">
+              <div class="text-[11px] font-bold text-rose-600 uppercase">Deductivas (${totals.totalDeductivasPzas} pzas)</div>
+              <div class="text-xl font-black text-rose-700 mt-1.5">${formatMoney(totals.montoDeductivas)}</div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-sky-200 shadow-sm">
+              <div class="text-[11px] font-bold text-sky-600 uppercase">Saldo Ajustado Final</div>
+              <div class="text-xl font-black text-sky-700 mt-1.5">${formatMoney(totals.ajustado)}</div>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <h3 class="text-xs font-bold text-slate-800 mb-3 flex items-center gap-2">
+              <i data-lucide="tag" class="w-4 h-4 text-sky-600"></i> Precios Unitarios Cargados (${totals.pricesCount} partidas con precio)
+            </h3>
+            <div class="overflow-x-auto max-h-72">
+              <table class="w-full text-xs border-collapse">
+                <thead>
+                  <tr class="bg-slate-100 text-left font-bold text-slate-600 border-b">
+                    <th class="p-2.5">CURS / Código</th>
+                    <th class="p-2.5">Descripción</th>
+                    <th class="p-2.5 text-right">Precio Unitario ($)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${station.checklist.map(item => {
+                    const p = station.presupuesto.prices[normalizeText(item.codigo)] ?? null;
+                    return `
+                      <tr class="border-b hover:bg-slate-50">
+                        <td class="p-2.5 font-mono font-bold">${item.codigo}</td>
+                        <td class="p-2.5 text-slate-600 truncate max-w-xs">${item.desc}</td>
+                        <td class="p-2.5 text-right font-mono font-bold ${p !== null ? 'text-emerald-700' : 'text-slate-400'}">${p !== null ? formatMoney(p) : 'Sin precio cargado'}</td>
+                      </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+        safeCreateIcons();
+      }
+
+      function updateBudgetBase(val) {
+        action('actualizar presupuesto', () => { getActiveStation().presupuesto.base = Math.max(0, Number(val) || 0); commit(); });
+      }
+
+      function renderResumenView() {
+        const container = document.getElementById('resumen-table-container');
+        const rows = stations.map(st => ({ st, totals: getBudgetTotals(st) }));
+        const grand = rows.reduce((acc, r) => ({
+          base: acc.base + r.totals.base,
+          aditivas: acc.aditivas + r.totals.montoAditivas,
+          deductivas: acc.deductivas + r.totals.montoDeductivas,
+          ajustado: acc.ajustado + r.totals.ajustado
+        }), { base: 0, aditivas: 0, deductivas: 0, ajustado: 0 });
+
+        container.innerHTML = `
+          <table class="w-full text-sm border-collapse">
+            <thead>
+              <tr class="text-left text-[11px] font-bold text-slate-500 uppercase border-b-2 border-slate-200">
+                <th class="p-3">Estación</th>
+                <th class="p-3 text-right">Presupuesto Base</th>
+                <th class="p-3 text-right text-emerald-600">Aditivas (+)</th>
+                <th class="p-3 text-right text-rose-600">Deductivas (-)</th>
+                <th class="p-3 text-right text-sky-700">Saldo a Pagar</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(({ st, totals }) => `
+                <tr class="border-b border-slate-100 hover:bg-slate-50">
+                  <td class="p-3 font-bold text-slate-800">${st.name}</td>
+                  <td class="p-3 text-right font-mono">${formatMoney(totals.base)}</td>
+                  <td class="p-3 text-right font-mono text-emerald-700">${formatMoney(totals.montoAditivas)} <span class="text-[10px] text-slate-400">(${totals.totalAditivasPzas}p)</span></td>
+                  <td class="p-3 text-right font-mono text-rose-700">${formatMoney(totals.montoDeductivas)} <span class="text-[10px] text-slate-400">(${totals.totalDeductivasPzas}p)</span></td>
+                  <td class="p-3 text-right font-mono font-bold text-sky-800">${formatMoney(totals.ajustado)}</td>
+                </tr>`).join('')}
+            </tbody>
+            <tfoot>
+              <tr class="border-t-2 border-slate-800 bg-slate-50 font-bold">
+                <td class="p-3">Total General (${stations.length} estaciones)</td>
+                <td class="p-3 text-right font-mono">${formatMoney(grand.base)}</td>
+                <td class="p-3 text-right font-mono text-emerald-700">${formatMoney(grand.aditivas)}</td>
+                <td class="p-3 text-right font-mono text-rose-700">${formatMoney(grand.deductivas)}</td>
+                <td class="p-3 text-right font-mono text-sky-800">${formatMoney(grand.ajustado)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        `;
+        safeCreateIcons();
+      }
+
+      function openBulkBudgetModal() {
+        document.getElementById('bulk-budget-input').value = '';
+        document.getElementById('modal-bulk-budget').classList.remove('hidden');
+        document.getElementById('modal-bulk-budget').classList.add('flex');
+      }
+
+      function closeBulkBudgetModal() {
+        document.getElementById('modal-bulk-budget').classList.add('hidden');
+        document.getElementById('modal-bulk-budget').classList.remove('flex');
+      }
+
+      function processBulkBudget() {
+        action('cargar presupuestos', () => {
+          const text = document.getElementById('bulk-budget-input').value;
+          const lines = text.split('\n');
+          let count = 0;
+          lines.forEach(line => {
+            const m = line.match(/^(.*?)\$?([\d,]+\.\d{2})$/);
+            if (m) {
+              const name = m[1].trim();
+              const amount = parseFloat(m[2].replace(',', ''));
+              const st = stations.find(s => normalizeText(s.name) === normalizeText(name));
+              if (st) { st.presupuesto.base = amount; count++; }
+            }
+          });
+          closeBulkBudgetModal();
+          commit();
+          showToast(`Se actualizaron ${count} presupuestos base.`, 'success');
+        });
+      }
+
+      // Lector actualizado agrupando múltiples imágenes por fila (admite todas las imágenes del Excel)
+      async function handleImportFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const zip = new JSZip();
+          const zipContent = await zip.loadAsync(arrayBuffer);
+
+          // 1. Extraer imágenes del zip (xl/media/)
+          const mediaFiles = {};
+          for (let filename in zipContent.files) {
+            if (filename.startsWith('xl/media/')) {
+              const fileData = await zipContent.files[filename].async('base64');
+              const ext = filename.split('.').pop().toLowerCase();
+              const mime = ext === 'jpeg' || ext === 'jpg' ? 'image/jpeg' : 'image/png';
+              mediaFiles[filename.replace('xl/media/', '')] = `data:${mime};base64,${fileData}`;
+            }
+          }
+
+          // 2. Mapear rId a archivo de imagen desde drawing1.xml.rels
+          let rIdToImage = {};
+          if (zipContent.files['xl/drawings/_rels/drawing1.xml.rels']) {
+            const relsText = await zipContent.files['xl/drawings/_rels/drawing1.xml.rels'].async('text');
+            const parser = new DOMParser();
+            const relsDoc = parser.parseFromString(relsText, 'application/xml');
+            const relationships = relsDoc.getElementsByTagName('Relationship');
+            for (let rel of relationships) {
+              const id = rel.getAttribute('Id');
+              const target = rel.getAttribute('Target');
+              if (target) {
+                const imgName = target.split('/').pop();
+                if (mediaFiles[imgName]) {
+                  rIdToImage[id] = mediaFiles[imgName];
+                }
+              }
+            }
+          }
+
+          // 3. Mapear fila del Excel a LISTA DE IMÁGENES desde drawing1.xml (admite varias por fila)
+          let rowToImages = {};
+          if (zipContent.files['xl/drawings/drawing1.xml']) {
+            const drawingText = await zipContent.files['xl/drawings/drawing1.xml'].async('text');
+            const parser = new DOMParser();
+            const drawingDoc = parser.parseFromString(drawingText, 'application/xml');
+            const anchors = drawingDoc.querySelectorAll('oneCellAnchor, twoCellAnchor');
+            for (let anchor of anchors) {
+              const fromRow = anchor.querySelector('from > row');
+              const blip = anchor.querySelector('blip');
+              if (fromRow && blip) {
+                const rowIndex = parseInt(fromRow.textContent, 10);
+                const embedId = blip.getAttribute('r:embed');
+                if (embedId && rIdToImage[embedId]) {
+                  const excelRow = rowIndex + 1;
+                  if (!rowToImages[excelRow]) rowToImages[excelRow] = [];
+                  rowToImages[excelRow].push(rIdToImage[embedId]);
+                }
+              }
+            }
+          }
+
+          // 4. Leer celdas con XLSX
+          const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+          const sheetName = workbook.SheetNames[0];
+          const ws = workbook.Sheets[sheetName];
+          const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+
+          const items = [];
+          let currentSenId = 'SEÑ.1.01';
+
+          matrix.forEach((row, idx) => {
+            const excelRowNumber = idx + 1; // 1-based index
+            if (idx >= 9) { // Filas de datos a partir de la fila 10 (index 9)
+              const senIdCol = (row[0] || '').toString().trim();
+              const cursCol = (row[1] || '').toString().trim();
+              const descCol = (row[4] || '').toString().trim();
+              const contratoVal = row[8];
+              const actualizadaVal = row[10];
+              const obsCol = (row[14] || '').toString().trim();
+
+              if (senIdCol) currentSenId = senIdCol;
+
+              if (cursCol || descCol || contratoVal !== '' || actualizadaVal !== '') {
+                const extractedImgs = rowToImages[excelRowNumber] || [];
+                items.push(buildChecklistItem(
+                  items.length,
+                  currentSenId,
+                  cursCol || (items.length > 0 ? items[items.length - 1].codigo : 'IMP-1'),
+                  descCol || cursCol || 'Señal',
+                  contratoVal !== '' ? Number(contratoVal) || 0 : 0,
+                  actualizadaVal !== '' ? Number(actualizadaVal) || 0 : 0,
+                  obsCol,
+                  extractedImgs
+                ));
+              }
+            }
+          });
+
+          if (items.length > 0) {
+            getActiveStation().checklist = items;
+            commit();
+            showToast(`¡Se importaron ${items.length} partidas con todas sus imágenes múltiples!`, 'success');
+          } else {
+            showToast('No se encontraron registros.', 'error');
+          }
+        } catch (err) {
+          console.error(err);
+          showToast('Error al procesar el archivo Excel.', 'error');
+        }
+
+        event.target.value = '';
+      }
+
+      async function handleImportBudgetPrices(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async e => action('importar precios', async () => {
+          const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+          const ws = workbook.Sheets[workbook.SheetNames[0]];
+          const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+          
+          const prices = {};
+          let totalEstacionBase = 0;
+
+          matrix.forEach((row, idx) => {
+            if (idx >= 4) {
+              const curs = (row[1] || '').toString().trim();
+              const price = Number(row[4]);
+
+              if (curs && !isNaN(price) && price > 0) {
+                prices[normalizeText(curs)] = price;
+              }
+            }
+            for (let c = 0; c < row.length; c++) {
+              let val = row[c];
+              if (val && typeof val === 'string' && val.toUpperCase().includes('TOTAL ESTACIÓN')) {
+                for (let nc = c + 1; nc < row.length; nc++) {
+                  let num = Number(row[nc]);
+                  if (!isNaN(num) && num > 1000) {
+                    totalEstacionBase = num;
+                  }
+                }
+              }
+            }
+          });
+
+          const station = getActiveStation();
+          station.presupuesto.prices = prices;
+          if (totalEstacionBase > 0) {
+            station.presupuesto.base = totalEstacionBase;
+          }
+          commit();
+          showToast(`Se cargaron ${Object.keys(prices).length} precios unitarios y presupuesto para ${station.name}.`, 'success');
+        });
+        reader.readAsArrayBuffer(file);
+        event.target.value = '';
+      }
+
+      function exportToExcel() {
+        action('exportar Excel', () => {
+          const station = getActiveStation();
+          const data = station.checklist.map(i => ({ Partida: i.clavePartida, CURS: i.codigo, Descripción: i.desc, Contrato: i.cantContrato, Actualizada: i.cantActualizada, Aditiva: i.aditivaVal, Deductiva: i.deductivaVal, Observaciones: i.notas }));
+          const ws = XLSX.utils.json_to_sheet(data);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, station.code);
+          XLSX.writeFile(wb, `Metrorrey_${station.code}.xlsx`);
+          showToast('Excel exportado.', 'success');
+        });
+      }
+
+      function exportFullReportPDF() {
+        action('exportar PDF', () => {
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF();
+          doc.text('METRORREY - Reporte General', 14, 15);
+          const rows = stations.map(st => {
+            const t = getBudgetTotals(st);
+            return [st.name, formatMoney(t.base), `${t.totalAditivasPzas}p`, `${t.totalDeductivasPzas}p`, formatMoney(t.ajustado)];
+          });
+          doc.autoTable({ startY: 25, head: [['Estación', 'Base', 'Aditivas', 'Deductivas', 'Saldo Ajustado']], body: rows });
+          doc.save('Metrorrey_Reporte.pdf');
+          showToast('PDF exportado.', 'success');
+        });
+      }
+
+      function exportStationMinutaPDF() {
+        action('exportar minuta', () => {
+          const st = getActiveStation();
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF();
+          doc.text(`Minuta Estación ${st.name}`, 14, 20);
+          doc.text(`Fecha: ${st.minuta.fecha}`, 14, 30);
+          doc.text(`Asistentes:\n${st.minuta.asistentes}`, 14, 40);
+          doc.text(`Acuerdos:\n${st.minuta.acuerdos}`, 14, 70);
+          doc.save(`Minuta_${st.code}.pdf`);
+          showToast('Minuta PDF exportada.', 'success');
+        });
+      }
+
+      window.onload = function () {
+        stations = seedStations();
+        const restored = loadState();
+        stations.forEach(st => ensureStationDefaults(st));
+        stations.forEach(st => st.checklist.forEach(item => recalculateItem(item)));
+        renderAll();
+        setSaveIndicator('ok');
+        if (restored) showToast('Datos restaurados del navegador.', 'info');
+        autoConnectSyncIfConfigured();
+      };
+    </script>
+  </body>
+</html>
