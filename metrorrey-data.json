@@ -512,7 +512,13 @@
         "base": 208798.62999999995,
         "aditivas": [
           {
-            "id": 1784848586447,
+            "id": 1784848605927,
+            "desc": "bastidor anncio h",
+            "monto": 4000,
+            "aprobada": false
+          },
+          {
+            "id": 1784848622250,
             "desc": "",
             "monto": 0,
             "aprobada": false
@@ -3245,5 +3251,5 @@
       }
     }
   ],
-  "updatedAt": "2026-07-23T23:16:39.206Z"
+  "updatedAt": "2026-07-23T23:17:14.739Z"
 }
