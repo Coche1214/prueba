@@ -2358,11 +2358,195 @@
         "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
       },
       "presupuesto": {
-        "base": 266825.86,
+        "base": 208798.62999999995,
         "aditivas": [],
         "deductivas": [],
-        "priceList": {},
-        "priceListRows": []
+        "priceList": {
+          "mampara en totem de anden": 24514.7,
+          "prohibido el paso": 966.88,
+          "uso de chaleco": 1433.75,
+          "portico de acceso vestibulo": 24452,
+          "a-000-let-s02-000-0-0": 910.8,
+          "a-000-red-s03-000-0-0": 910.8,
+          "a-000-red-s07-000-0-0": 910.8,
+          "a-001-red-s06-001-0-0": 910.8,
+          "a-001-red-s07-001-0-0": 910.8,
+          "a-011-red-s08-011-0-0": 910.8,
+          "a-600-red-s09-600-0-0": 910.8,
+          "a-000-red-s25-000-0-0": 910.8,
+          "a-000-red-s26-000-0-0": 910.8,
+          "b-000-red-s05-000-b-0": 910.8,
+          "b-000-red-s05-000-c-0": 910.8,
+          "b-000-red-s05-102-b-0": 910.8,
+          "b-000-red-s05-102-c-0": 910.8,
+          "b-503-red-s05-000-b-0": 910.8,
+          "b-503-red-s05-000-c-0": 910.8,
+          "d-000-let-s10-000-f-x": 13682.65,
+          "e-000-let-s11-000-0-0": 3099.94,
+          "e-000-let-s15-000-c-0": 2755.5,
+          "f-000-red-s16-000-0-0": 4857.6,
+          "f-000-red-s26-000-0-0": 4408.8,
+          "g-000-red-s13-000-0-0": 8453.87,
+          "k-000-let-s15-000-b-0": 2755.5
+        },
+        "priceListRows": [
+          {
+            "label": "MAMPARA EN TOTEM DE ANDEN",
+            "price": 24514.7,
+            "cantidad": 2,
+            "total": 49029.4
+          },
+          {
+            "label": "PROHIBIDO EL PASO",
+            "price": 966.88,
+            "cantidad": 4,
+            "total": 3867.52
+          },
+          {
+            "label": "USO DE CHALECO",
+            "price": 1433.75,
+            "cantidad": 4,
+            "total": 5735
+          },
+          {
+            "label": "PORTICO DE ACCESO VESTIBULO",
+            "price": 24452,
+            "cantidad": 2,
+            "total": 48904
+          },
+          {
+            "label": "A-000-LET-S02-000-0-0",
+            "price": 910.8,
+            "cantidad": 8,
+            "total": 7286.4
+          },
+          {
+            "label": "A-000-RED-S03-000-0-0",
+            "price": 910.8,
+            "cantidad": 2,
+            "total": 1821.6
+          },
+          {
+            "label": "A-000-RED-S07-000-0-0",
+            "price": 910.8,
+            "cantidad": 8,
+            "total": 7286.4
+          },
+          {
+            "label": "A-001-RED-S06-001-0-0",
+            "price": 910.8,
+            "cantidad": 2,
+            "total": 1821.6
+          },
+          {
+            "label": "A-001-RED-S07-001-0-0",
+            "price": 910.8,
+            "cantidad": 2,
+            "total": 1821.6
+          },
+          {
+            "label": "A-011-RED-S08-011-0-0",
+            "price": 910.8,
+            "cantidad": 1,
+            "total": 910.8
+          },
+          {
+            "label": "A-600-RED-S09-600-0-0",
+            "price": 910.8,
+            "cantidad": 4,
+            "total": 3643.2
+          },
+          {
+            "label": "A-000-RED-S25-000-0-0",
+            "price": 910.8,
+            "cantidad": 1,
+            "total": 910.8
+          },
+          {
+            "label": "A-000-RED-S26-000-0-0",
+            "price": 910.8,
+            "cantidad": 2,
+            "total": 1821.6
+          },
+          {
+            "label": "B-000-RED-S05-000-b-0",
+            "price": 910.8,
+            "cantidad": 1,
+            "total": 910.8
+          },
+          {
+            "label": "B-000-RED-S05-000-c-0",
+            "price": 910.8,
+            "cantidad": 1,
+            "total": 910.8
+          },
+          {
+            "label": "B-000-RED-S05-102-b-0",
+            "price": 910.8,
+            "cantidad": 1,
+            "total": 910.8
+          },
+          {
+            "label": "B-000-RED-S05-102-c-0",
+            "price": 910.8,
+            "cantidad": 1,
+            "total": 910.8
+          },
+          {
+            "label": "B-503-RED-S05-000-b-0",
+            "price": 910.8,
+            "cantidad": 1,
+            "total": 910.8
+          },
+          {
+            "label": "B-503-RED-S05-000-c-0",
+            "price": 910.8,
+            "cantidad": 1,
+            "total": 910.8
+          },
+          {
+            "label": "D-000-LET-S10-000-f-X",
+            "price": 13682.65,
+            "cantidad": 2,
+            "total": 27365.3
+          },
+          {
+            "label": "E-000-LET-S11-000-0-0",
+            "price": 3099.94,
+            "cantidad": 1,
+            "total": 3099.94
+          },
+          {
+            "label": "E-000-LET-S15-000-c-0",
+            "price": 2755.5,
+            "cantidad": 2,
+            "total": 5511
+          },
+          {
+            "label": "F-000-RED-S16-000-0-0",
+            "price": 4857.6,
+            "cantidad": 2,
+            "total": 9715.2
+          },
+          {
+            "label": "F-000-RED-S26-000-0-0",
+            "price": 4408.8,
+            "cantidad": 2,
+            "total": 8817.6
+          },
+          {
+            "label": "G-000-RED-S13-000-0-0",
+            "price": 8453.87,
+            "cantidad": 1,
+            "total": 8453.87
+          },
+          {
+            "label": "K-000-LET-S15-000-b-0",
+            "price": 2755.5,
+            "cantidad": 2,
+            "total": 5511
+          }
+        ]
       }
     },
     {
@@ -2849,5 +3033,5 @@
       }
     }
   ],
-  "updatedAt": "2026-07-23T05:14:04.483Z"
+  "updatedAt": "2026-07-23T05:15:49.041Z"
 }
