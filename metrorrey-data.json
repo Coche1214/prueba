@@ -510,7 +510,14 @@
       },
       "presupuesto": {
         "base": 208798.62999999995,
-        "aditivas": [],
+        "aditivas": [
+          {
+            "id": 1784848586447,
+            "desc": "",
+            "monto": 0,
+            "aprobada": false
+          }
+        ],
         "deductivas": [],
         "priceList": {
           "mampara en totem de anden": 24514.7,
@@ -3238,5 +3245,5 @@
       }
     }
   ],
-  "updatedAt": "2026-07-23T23:16:13.245Z"
+  "updatedAt": "2026-07-23T23:16:29.782Z"
 }
