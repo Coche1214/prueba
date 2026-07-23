@@ -1,0 +1,3352 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metrorrey - Supervisión y Control de Estaciones</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Firebase (optional, only used if the person configures cloud sync) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+      .tab-btn-active { border-bottom-color: #0284c7 !important; color: #0284c7 !important; font-weight: 700 !important; }
+      .station-tab-active { background-color: #0284c7 !important; color: #ffffff !important; box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.3); }
+      ::-webkit-scrollbar { height: 8px; width: 8px; }
+      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+      .table-control-header { background-color: #84cc16; color: #0f172a; font-weight: 700; }
+      .row-inconsistent { background-color: #fff7ed !important; }
+      .save-dot { width: 7px; height: 7px; border-radius: 9999px; display: inline-block; }
+    </style>
+  </head>
+  <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- ============================================================
+         HEADER
+         ============================================================ -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+          <div class="bg-sky-600 text-white p-2.5 rounded-xl shadow-inner flex items-center justify-center font-black text-xl tracking-wider">M</div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="font-bold text-lg tracking-tight">METRORREY</h1>
+              <span class="bg-sky-500/20 text-sky-400 text-xs px-2.5 py-0.5 rounded-full font-bold border border-sky-500/30">Línea 2</span>
+            </div>
+            <p class="text-xs text-slate-400 flex items-center gap-1.5">
+              Sistema de Supervisión y Control de Estaciones
+              <span id="save-indicator" class="ml-2 inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide">
+                <span id="save-dot" class="save-dot bg-emerald-400"></span>
+                <span id="save-text">Guardado</span>
+              </span>
+              <button onclick="openSyncModal()" id="sync-indicator" class="ml-2 inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded-full border border-slate-700 transition">
+                <i data-lucide="cloud-off" class="w-3 h-3 text-slate-500"></i>
+                <span id="sync-text">Sin sincronizar</span>
+              </button>
+            </p>
+          </div>
+        </div>
+
+        <nav class="flex gap-1 bg-slate-800 p-1 rounded-xl border border-slate-700">
+          <button onclick="switchMainTab('stations')" id="nav-stations" class="px-4 py-2 rounded-lg text-xs font-medium transition flex items-center gap-2 tab-btn-active">
+            <i data-lucide="map-pin" class="w-4 h-4"></i> Estaciones y Control
+          </button>
+          <button onclick="switchMainTab('analytics')" id="nav-analytics" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition flex items-center gap-2">
+            <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Reportes y Avances
+          </button>
+          <button onclick="switchMainTab('presupuesto')" id="nav-presupuesto" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition flex items-center gap-2">
+            <i data-lucide="wallet" class="w-4 h-4"></i> Presupuesto
+          </button>
+          <button onclick="switchMainTab('resumen')" id="nav-resumen" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition flex items-center gap-2">
+            <i data-lucide="clipboard-list" class="w-4 h-4"></i> Resumen
+          </button>
+        </nav>
+
+        <div class="flex items-center gap-3">
+          <div class="bg-white px-3 py-1.5 rounded-lg border border-slate-700 shadow-inner flex items-center gap-2">
+            <div class="text-[10px] leading-tight text-slate-900 font-bold tracking-tight text-right">
+              <div>ig Anuncios</div>
+              <div class="text-[8px] text-sky-700 font-medium">Impresiones</div>
+            </div>
+            <div class="w-6 h-6 rounded bg-sky-700 text-white flex items-center justify-center font-black text-xs shadow">IG</div>
+          </div>
+          <button onclick="document.getElementById('import-control-table-input').click()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition">
+            <i data-lucide="upload" class="w-4 h-4"></i> Cargar Tabla de Control
+          </button>
+          <input type="file" id="import-control-table-input" accept=".xlsx,.xls,.csv,.pdf" class="hidden" onchange="handleImportFile(event)">
+          <button onclick="exportFullReportPDF()" class="bg-sky-600 hover:bg-sky-500 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition">
+            <i data-lucide="file-text" class="w-4 h-4"></i> Exportar PDF
+          </button>
+          <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Excel
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============================================================
+         MAIN
+         ============================================================ -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col gap-6">
+
+      <div id="view-stations" class="flex flex-col gap-6">
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h2 class="text-sm font-bold text-sky-700 uppercase tracking-wide flex items-center gap-1.5">
+              <i data-lucide="map-pin" class="w-4 h-4"></i> Estaciones del Proyecto
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">Selecciona una estación para gestionar su minuta, planos y tabla de control de señalética.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <div id="stations-tabs-container" class="flex flex-wrap gap-2"></div>
+            <button onclick="openNewStationModal()" class="shrink-0 bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i> Nueva Estación
+            </button>
+            <button onclick="openBulkStationsModal()" class="shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition">
+              <i data-lucide="list-plus" class="w-4 h-4"></i> Importar Lista de Estaciones
+            </button>
+          </div>
+        </div>
+
+        <div id="station-detail-container" class="flex flex-col gap-6"></div>
+      </div>
+
+      <div id="view-analytics" class="hidden flex flex-col gap-6">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h2 class="text-lg font-bold text-slate-800 mb-1">Resumen General de Avances y Métricas</h2>
+          <p class="text-xs text-slate-500 mb-6">Estadísticas globales de fabricación, instalación y control de señalética en todas las estaciones de Línea 2.</p>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Total Señales Contratadas</span>
+              <span id="stat-total-contrato" class="text-3xl font-black text-slate-800 mt-1.5">0</span>
+              <span class="text-[11px] text-slate-400 mt-0.5">En todas las estaciones de Línea 2</span>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-sky-200 shadow-sm flex flex-col justify-between">
+              <span class="text-[11px] font-bold text-sky-600 uppercase tracking-wide">Señales Listas (Impresión)</span>
+              <span id="stat-total-impresion" class="text-3xl font-black text-sky-700 mt-1.5">0</span>
+              <span class="text-[11px] text-slate-400 mt-0.5">Aprobadas para producción</span>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-emerald-200 shadow-sm flex flex-col justify-between">
+              <span class="text-[11px] font-bold text-emerald-600 uppercase tracking-wide">Señales Instaladas OK</span>
+              <span id="stat-total-instaladas" class="text-3xl font-black text-emerald-700 mt-1.5">0</span>
+              <span class="text-[11px] text-slate-400 mt-0.5">Piezas completamente colocadas</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center">
+              <div class="w-full flex items-center justify-between mb-4 gap-2 flex-wrap">
+                <h3 class="text-xs font-bold text-slate-700">Avance de Instalación por Estación</h3>
+                <select id="analytics-station-select" onchange="renderStationProgressCard()" class="text-xs border border-slate-200 rounded-lg px-2 py-1.5 bg-slate-50 font-bold focus:ring-2 focus:ring-sky-500"></select>
+              </div>
+              <div class="w-full h-64 flex flex-col items-center justify-center gap-3">
+                <div id="analytics-station-progress-pct" class="text-6xl font-black text-sky-700">0%</div>
+                <div id="analytics-station-progress-name" class="text-sm font-bold text-slate-700"></div>
+                <div class="w-full max-w-xs bg-slate-100 rounded-full h-3 overflow-hidden">
+                  <div id="analytics-station-progress-bar" class="bg-sky-600 h-3 rounded-full transition-all" style="width:0%"></div>
+                </div>
+                <div id="analytics-station-progress-detail" class="text-[11px] text-slate-400"></div>
+              </div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center">
+              <h3 class="text-xs font-bold text-slate-700 mb-4 w-full text-left">Estado General del Proyecto (Línea 2)</h3>
+              <div class="w-full h-64 relative flex items-center justify-center"><canvas id="analyticsChartOverall"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-presupuesto" class="hidden flex flex-col gap-6">
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h2 class="text-sm font-bold text-sky-700 uppercase tracking-wide flex items-center gap-1.5">
+              <i data-lucide="wallet" class="w-4 h-4"></i> Presupuesto por Estación
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">Monto contratado, aditivas y deductivas aprobadas por estación.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <select id="budget-station-select" onchange="setBudgetStation(this.value)" class="text-xs border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus:ring-2 focus:ring-sky-500 font-bold min-w-[220px]"></select>
+            <button onclick="document.getElementById('import-budget-prices-input').click()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition">
+              <i data-lucide="upload" class="w-4 h-4"></i> Cargar Precios por Partida
+            </button>
+            <input type="file" id="import-budget-prices-input" accept=".xlsx,.xls,.csv,.pdf" class="hidden" onchange="handleImportBudgetFile(event)">
+          </div>
+        </div>
+        <div id="budget-detail-container" class="flex flex-col gap-6"></div>
+      </div>
+
+      <div id="view-resumen" class="hidden flex flex-col gap-6">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-1">
+            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i data-lucide="clipboard-list" class="w-5 h-5 text-sky-600"></i> Resumen de Presupuesto por Estación</h2>
+            <button onclick="openBulkBudgetModal()" class="shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow flex items-center gap-1.5 transition">
+              <i data-lucide="upload" class="w-4 h-4"></i> Cargar Presupuesto Base por Estación
+            </button>
+          </div>
+          <p class="text-xs text-slate-500 mb-6">Presupuesto contratado, aditivas y deductivas aprobadas, y saldo a pagar de cada estación de Línea 2.</p>
+          <div id="resumen-table-container" class="overflow-x-auto"></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ============================================================
+         MODALS
+         ============================================================ -->
+    <div id="modal-image-lightbox" class="fixed inset-0 bg-slate-950/80 z-[100] hidden items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-3xl w-full overflow-hidden shadow-2xl flex flex-col">
+        <div class="bg-slate-900 text-white px-4 py-3 flex justify-between items-center">
+          <h3 id="lightbox-title" class="text-sm font-bold truncate">Vista Previa de Imagen / Señal</h3>
+          <button onclick="closeImageLightbox()" class="text-slate-400 hover:text-white p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="p-6 bg-slate-900/90 flex items-center justify-center min-h-[350px]">
+          <img id="lightbox-img" src="" alt="Vista previa ampliada" class="max-h-[70vh] max-w-full rounded-lg object-contain shadow-lg border border-slate-700">
+        </div>
+        <div class="bg-slate-100 px-4 py-3 border-t border-slate-200 flex justify-end">
+          <button onclick="closeImageLightbox()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-xs font-medium">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-new-station" class="fixed inset-0 bg-slate-950/80 z-[100] hidden items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl flex flex-col">
+        <div class="bg-slate-900 text-white px-4 py-3 flex justify-between items-center">
+          <h3 class="text-sm font-bold flex items-center gap-2"><i id="station-modal-icon" data-lucide="plus-circle" class="w-4 h-4"></i> <span id="station-modal-title">Nueva Estación</span></h3>
+          <button onclick="closeNewStationModal()" class="text-slate-400 hover:text-white p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="p-5 flex flex-col gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Nombre de la estación</label>
+            <input type="text" id="new-station-name" placeholder="Ej. Del Golfo" class="w-full text-sm p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-sky-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Línea</label>
+            <input type="text" id="new-station-line" placeholder="Ej. Línea 2" value="Línea 2" class="w-full text-sm p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-sky-500">
+          </div>
+        </div>
+        <div class="bg-slate-100 px-4 py-3 border-t border-slate-200 flex justify-end gap-2">
+          <button onclick="closeNewStationModal()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold">Cancelar</button>
+          <button onclick="saveNewStation()" id="station-modal-save-btn" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-xs font-bold">Crear Estación</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-bulk-budget" class="fixed inset-0 bg-slate-950/80 z-[100] hidden items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        <div class="bg-indigo-700 text-white px-4 py-3 flex justify-between items-center shrink-0">
+          <h3 class="text-sm font-bold flex items-center gap-2"><i data-lucide="upload" class="w-4 h-4"></i> Cargar Presupuesto Base por Estación</h3>
+          <button onclick="closeBulkBudgetModal()" class="text-indigo-200 hover:text-white p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="p-5 flex flex-col gap-3 overflow-y-auto">
+          <p class="text-xs text-slate-600 leading-relaxed">Pega una lista o tabla con el nombre de cada estación y su monto, por ejemplo:</p>
+          <pre class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-[11px] text-slate-600 leading-relaxed">| Estación | Presupuesto |
+| Alameda | $192,525.31 |
+| Zaragoza | $321,986.88 |</pre>
+          <textarea id="bulk-budget-input" rows="10" placeholder="Pega tu lista o tabla aquí..." class="w-full text-xs p-3 border border-slate-200 rounded-xl bg-slate-50 font-mono focus:ring-2 focus:ring-indigo-500"></textarea>
+          <p class="text-[11px] text-slate-500">Se busca cada estación por nombre (sin distinguir mayúsculas/acentos). Esto <b>reemplaza</b> el Presupuesto Base actual de cada estación que coincida.</p>
+        </div>
+        <div class="bg-slate-100 px-4 py-3 border-t border-slate-200 flex justify-end gap-2 shrink-0">
+          <button onclick="closeBulkBudgetModal()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold">Cancelar</button>
+          <button onclick="processBulkBudget()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold">Aplicar Presupuestos</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-bulk-stations" class="fixed inset-0 bg-slate-950/80 z-[100] hidden items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        <div class="bg-indigo-700 text-white px-4 py-3 flex justify-between items-center shrink-0">
+          <h3 class="text-sm font-bold flex items-center gap-2"><i data-lucide="list-plus" class="w-4 h-4"></i> Importar Lista de Estaciones</h3>
+          <button onclick="closeBulkStationsModal()" class="text-indigo-200 hover:text-white p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="p-5 flex flex-col gap-3 overflow-y-auto">
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Pega una lista con encabezados de línea y viñetas, por ejemplo:
+          </p>
+          <pre class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-[11px] text-slate-600 leading-relaxed">Línea 1
+* Alfonso Reyes
+* Aztlán
+* Central
+
+Línea 2
+* Alameda
+* Anáhuac</pre>
+          <textarea id="bulk-stations-input" rows="10" placeholder="Pega tu lista aquí..." class="w-full text-xs p-3 border border-slate-200 rounded-xl bg-slate-50 font-mono focus:ring-2 focus:ring-indigo-500"></textarea>
+          <p class="text-[11px] text-slate-500">Las estaciones que ya existan (comparando por nombre) se omiten automáticamente — no se duplican.</p>
+        </div>
+        <div class="bg-slate-100 px-4 py-3 border-t border-slate-200 flex justify-end gap-2 shrink-0">
+          <button onclick="closeBulkStationsModal()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold">Cancelar</button>
+          <button onclick="processBulkStations()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold">Crear Estaciones Faltantes</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-confirm-action" class="fixed inset-0 bg-slate-950/80 z-[100] hidden items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl flex flex-col">
+        <div class="bg-rose-600 text-white px-4 py-3 flex justify-between items-center">
+          <h3 class="text-sm font-bold flex items-center gap-2"><i data-lucide="trash-2" class="w-4 h-4"></i> Confirmar Eliminación</h3>
+          <button onclick="closeConfirmActionModal()" class="text-rose-200 hover:text-white p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="p-5 flex flex-col gap-2">
+          <p id="confirm-action-message" class="text-sm text-slate-700 leading-relaxed"></p>
+          <p class="text-[11px] text-rose-600 font-bold">⚠ Esta acción no se puede deshacer.</p>
+        </div>
+        <div class="bg-slate-100 px-4 py-3 border-t border-slate-200 flex justify-end gap-2">
+          <button onclick="closeConfirmActionModal()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold">Cancelar</button>
+          <button onclick="runConfirmedAction()" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg text-xs font-bold">Sí, Eliminar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-import-station" class="fixed inset-0 bg-slate-950/80 z-[100] hidden items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl flex flex-col">
+        <div class="bg-indigo-700 text-white px-4 py-3 flex justify-between items-center">
+          <h3 class="text-sm font-bold flex items-center gap-2"><i data-lucide="upload" class="w-4 h-4"></i> Importar Tabla de Control</h3>
+          <button onclick="closeImportStationModal()" class="text-indigo-200 hover:text-white p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="p-5 flex flex-col gap-3">
+          <p id="import-station-summary" class="text-xs text-slate-600 leading-relaxed"></p>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Importar a la estación:</label>
+            <select id="import-station-select" class="w-full text-sm p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-indigo-500"></select>
+          </div>
+          <p class="text-[11px] text-rose-600 font-bold">⚠ Esto reemplazará por completo la tabla de control actual de la estación seleccionada.</p>
+        </div>
+        <div class="bg-slate-100 px-4 py-3 border-t border-slate-200 flex justify-end gap-2">
+          <button onclick="closeImportStationModal()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold">Cancelar</button>
+          <button onclick="confirmImportToStation()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold">Importar y Reemplazar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-import-budget" class="fixed inset-0 bg-slate-950/80 z-[100] hidden items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl flex flex-col">
+        <div class="bg-indigo-700 text-white px-4 py-3 flex justify-between items-center">
+          <h3 class="text-sm font-bold flex items-center gap-2"><i data-lucide="upload" class="w-4 h-4"></i> Cargar Precios por Partida</h3>
+          <button onclick="closeImportBudgetModal()" class="text-indigo-200 hover:text-white p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="p-5 flex flex-col gap-3">
+          <p id="import-budget-summary" class="text-xs text-slate-600 leading-relaxed"></p>
+          <p class="text-[11px] text-rose-600 font-bold">⚠ Esto reemplazará la lista de precios actual de esta estación.</p>
+        </div>
+        <div class="bg-slate-100 px-4 py-3 border-t border-slate-200 flex justify-end gap-2">
+          <button onclick="closeImportBudgetModal()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold">Cancelar</button>
+          <button onclick="confirmImportBudgetPrices()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold">Cargar y Reemplazar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-sync" class="fixed inset-0 bg-slate-950/80 z-[100] hidden items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        <div class="bg-slate-900 text-white px-4 py-3 flex justify-between items-center shrink-0">
+          <h3 class="text-sm font-bold flex items-center gap-2"><i data-lucide="cloud" class="w-4 h-4"></i> Sincronización (equipo compartido)</h3>
+          <button onclick="closeSyncModal()" class="text-slate-400 hover:text-white p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="p-5 flex flex-col gap-4 overflow-y-auto">
+          <div id="sync-status-banner" class="p-3 rounded-xl border text-xs font-bold flex items-center gap-2"></div>
+
+          <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200 w-fit">
+            <button onclick="setSyncProviderTab('firebase')" id="sync-tab-firebase" class="px-4 py-2 rounded-lg text-xs font-bold transition">Firebase</button>
+            <button onclick="setSyncProviderTab('github')" id="sync-tab-github" class="px-4 py-2 rounded-lg text-xs font-bold transition">GitHub (tu repositorio)</button>
+          </div>
+
+          <div id="sync-panel-firebase" class="flex flex-col gap-4">
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-700 leading-relaxed">
+              <p class="font-bold text-slate-900 mb-2">Cómo activarlo (una sola vez, ~10 minutos):</p>
+              <ol class="list-decimal list-inside space-y-1.5">
+                <li>Ve a <a href="https://console.firebase.google.com" target="_blank" class="text-sky-600 underline font-bold">console.firebase.google.com</a> y crea un proyecto gratis (con tu cuenta de Google).</li>
+                <li>En el proyecto, entra a <b>Compilación → Firestore Database</b> → "Crear base de datos" → elige modo <b>producción</b> y cualquier región.</li>
+                <li>En la pestaña <b>Reglas</b> de Firestore, reemplaza el contenido por esto y publica:
+                  <pre class="bg-slate-900 text-emerald-300 text-[10px] p-2 rounded-lg mt-1 overflow-x-auto">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}</pre>
+                  <span class="text-amber-600 font-bold">⚠ Esto permite que cualquiera con el enlace de tu proyecto lea/escriba los datos — está bien para un equipo interno, pero no publiques el archivo con esta configuración en un sitio público.</span>
+                </li>
+                <li>Ve a <b>Configuración del proyecto (⚙) → General</b>, baja a "Tus apps", crea una <b>app Web</b> (icono &lt;/&gt;), y copia el objeto <code>firebaseConfig</code> que te muestra.</li>
+                <li>Pega ese objeto completo aquí abajo y da clic en "Conectar".</li>
+              </ol>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Pega aquí tu firebaseConfig:</label>
+              <textarea id="sync-config-input" rows="7" placeholder='{
+  apiKey: "...",
+  authDomain: "...",
+  projectId: "...",
+  storageBucket: "...",
+  messagingSenderId: "...",
+  appId: "..."
+}' class="w-full text-xs p-3 border border-slate-200 rounded-xl bg-slate-50 font-mono focus:ring-2 focus:ring-sky-500"></textarea>
+            </div>
+            <p class="text-[11px] text-slate-500">Cambios en tiempo real: todos ven las ediciones de los demás al instante.</p>
+          </div>
+
+          <div id="sync-panel-github" class="hidden flex-col gap-4">
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-700 leading-relaxed">
+              <p class="font-bold text-slate-900 mb-2">Para cada persona de tu equipo (~2 minutos, los campos de repositorio ya vienen llenos):</p>
+              <ol class="list-decimal list-inside space-y-1.5">
+                <li>En GitHub, ve a <b>Settings → Developer settings → Personal access tokens → Fine-grained tokens</b> → "Generate new token".</li>
+                <li>Limita el token a <b>este repositorio</b> y dale permiso de <b>Contents: Read and write</b>.</li>
+                <li>Copia el token generado (empieza con <code>github_pat_...</code>) — solo se muestra una vez.</li>
+                <li>Pégalo abajo en "Personal Access Token" y da clic en "Conectar" — el resto de los campos ya están listos.</li>
+              </ol>
+              <p class="text-slate-500 mt-1">💡 Si prefieres no generar un token por persona, también puedes darle a tu equipo directamente el mismo token que tú generaste — funciona igual, solo que no podrás revocarle el acceso a una sola persona sin afectar a las demás.</p>
+              <p class="text-amber-600 font-bold mt-2">⚠ El token queda guardado en el navegador de cada persona que lo use. No lo compartas fuera de tu equipo, y si el repositorio es público, usa un token limitado solo a este repo.</p>
+              <p class="text-slate-500 mt-1">Nota: esto no es instantáneo como Firebase — la app revisa cambios cada ~45 segundos y cada guardado crea un commit en tu repositorio.</p>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Usuario/organización</label>
+                <input type="text" id="github-owner-input" placeholder="ej. mi-usuario" value="coche1214" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-sky-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Repositorio</label>
+                <input type="text" id="github-repo-input" placeholder="ej. metrorrey-app" value="prueba" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-sky-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Rama</label>
+                <input type="text" id="github-branch-input" placeholder="main" value="main" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-sky-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Ruta del archivo de datos</label>
+                <input type="text" id="github-path-input" placeholder="metrorrey-data.json" value="metrorrey-data.json" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-sky-500">
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Personal Access Token</label>
+              <input type="password" id="github-token-input" placeholder="github_pat_..." class="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 font-mono focus:ring-2 focus:ring-sky-500">
+            </div>
+            <p class="text-[11px] text-slate-500">Los datos se guardan como un archivo JSON en tu propio repositorio — puedes verlo y hasta revisar el historial de cambios ahí mismo.</p>
+          </div>
+        </div>
+        <div class="bg-slate-100 px-4 py-3 border-t border-slate-200 flex justify-between items-center gap-2 shrink-0">
+          <button onclick="disableSync()" id="sync-disconnect-btn" class="text-rose-600 hover:underline text-xs font-bold hidden">Desconectar sincronización</button>
+          <div class="flex gap-2 ml-auto">
+            <button onclick="closeSyncModal()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold">Cerrar</button>
+            <button onclick="connectActiveSyncProvider()" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-lg text-xs font-bold">Conectar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-sync-conflict" class="fixed inset-0 bg-slate-950/90 z-[120] hidden items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col">
+        <div class="bg-amber-500 text-white px-4 py-3 flex items-center gap-2">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+          <h3 class="text-sm font-bold">Se encontraron datos en dos lugares</h3>
+        </div>
+        <div class="p-5 flex flex-col gap-4">
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Ya hay información guardada tanto <b>en la nube</b> como <b>en este navegador</b>, y no son iguales. Elige cuál quieres conservar — la otra se reemplazará por completo (esto no se puede deshacer).
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="border-2 border-sky-300 rounded-xl p-3 bg-sky-50">
+              <div class="text-xs font-bold text-sky-800 mb-1">☁ En la nube</div>
+              <div id="sync-conflict-cloud-summary" class="text-[11px] text-slate-600"></div>
+            </div>
+            <div class="border-2 border-slate-300 rounded-xl p-3 bg-slate-50">
+              <div class="text-xs font-bold text-slate-800 mb-1">💻 En este navegador</div>
+              <div id="sync-conflict-local-summary" class="text-[11px] text-slate-600"></div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-slate-100 px-4 py-3 border-t border-slate-200 flex flex-col md:flex-row justify-end gap-2">
+          <button onclick="resolveSyncConflict('local')" class="bg-white border-2 border-slate-400 hover:bg-slate-50 text-slate-800 px-4 py-2 rounded-lg text-xs font-bold">Usar los de este navegador</button>
+          <button onclick="resolveSyncConflict('cloud')" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-lg text-xs font-bold">Usar los de la nube</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast-container" class="fixed bottom-6 right-6 z-[110] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- ============================================================
+         APPLICATION LOGIC
+         ============================================================ -->
+    <script>
+      'use strict';
+
+      /* ============================================================
+         1. STATE
+         Everything the app renders comes from these two objects.
+         `stations` is the data; `ui` is what's currently in view.
+         Nothing else should hold a second copy of this information.
+         ============================================================ */
+
+      let stations = [];
+      const ui = { activeStationId: 'lerdo', activeMainTab: 'stations', activeStationTab: 'checklist' };
+
+      function seedStations() {
+        return [
+          {
+            id: 'lerdo', name: 'Lerdo de Tejada', code: 'LER', line: 'Línea 2', status: 'En Proceso', progress: 45,
+            checklist: [
+              mk(1, 'SEÑ.1.01', 'M2-LER-S01', 'Señal de Andén / Directorio de Destinos', 'Acrílico 6mm con impresión vinil reflectante', 2, 2, true, true, 2, 0, 0, 0, true, 'Instalado correctamente en muro principal de andén norte.'),
+              mk(2, 'SEÑ.1.02', 'M2-LER-S02', 'Señal Informativa de Salida / Mezzanine', 'Aluminum Composite Panel 4mm', 4, 4, true, true, 3, 1, 0, 0, false, 'Falta colocar la última pieza en acceso poniente.'),
+              mk(3, 'SEÑ.1.03', 'M2-LER-S03', 'Señal de Prohibido el Paso / Restricción', 'Vinil adherido en mampara de cristal', 6, 5, true, false, 0, 5, 0, 1, false, 'Se aplicó deductiva por ajuste en mamparas de acceso.'),
+              mk(4, 'SEÑ.1.04', 'M2-LER-S04', 'Placa de Identificación de Estación', 'Aluminio troquelado con esmalte horneado', 2, 3, true, true, 3, 0, 1, 0, true, 'Se añadió 1 pieza adicional por solicitud de inspección.'),
+              mk(5, 'SEÑ.1.05', 'M2-LER-S05', 'Señal de Ruta de Evacuación / Salida de Emergencia', 'Fotoluminiscente alto brillo', 8, 8, true, false, 4, 4, 0, 0, false, 'Material impreso, pendiente montaje en pasillo sur.'),
+              mk(6, 'SEÑ.1.06', 'M2-LER-S06', 'Señal de Zona de Torniquetes y Taquillas', 'Acrílico colgante con tensores de acero', 2, 2, true, true, 2, 0, 0, 0, true, 'Instalado a la altura requerida sobre línea de validadores.'),
+              mk(7, 'SEÑ.1.07', 'M2-LER-S07', 'Señal de Advertencia de Alto Voltaje / Subestación', 'Aluminio reflectante de seguridad industrial', 4, 4, true, false, 0, 4, 0, 0, false, 'Entregado al jefe de mantenimiento eléctrico para colocación.')
+            ]
+          },
+          {
+            id: 'alameda', name: 'Alameda', code: 'ALM', line: 'Línea 2', status: 'En Proceso', progress: 60,
+            checklist: [
+              mk(101, 'SEÑ.2.01', 'M2-ALM-S01', 'Señal de Andén / Directorio de Destinos', 'Acrílico 6mm con impresión vinil reflectante', 4, 4, true, true, 4, 0, 0, 0, true, 'Instalación completa en ambos andenes.'),
+              mk(102, 'SEÑ.2.02', 'M2-ALM-S02', 'Señal Informativa de Salida / Mezzanine', 'Aluminum Composite Panel 4mm', 6, 6, true, true, 6, 0, 0, 0, true, 'Revisado y aprobado por supervisor de estación.')
+            ]
+          },
+          {
+            id: 'general_anaya', name: 'General Anaya', code: 'GAY', line: 'Línea 2', status: 'Programada', progress: 10,
+            checklist: [
+              mk(201, 'SEÑ.3.01', 'M2-GAY-S01', 'Señal de Andén Principal', 'Acrílico 6mm', 2, 2, false, false, 0, 2, 0, 0, false, 'Pendiente levantamiento en campo.')
+            ]
+          },
+          { id: 'cuauhtemoc', name: 'Cuauhtémoc', code: 'CUA', line: 'Línea 2', status: 'Programada', progress: 0, checklist: [] },
+          { id: 'del_golfo', name: 'Del Golfo', code: 'GOL', line: 'Línea 2', status: 'Programada', progress: 0, checklist: [] },
+          { id: 'padre_mier', name: 'Padre Mier', code: 'PMI', line: 'Línea 2', status: 'Programada', progress: 0, checklist: [] },
+          { id: 'zaragoza', name: 'Zaragoza', code: 'ZAR', line: 'Línea 2', status: 'Programada', progress: 0, checklist: [] }
+        ];
+      }
+
+      function mk(id, clave, codigo, desc, criterio, contrato, actualizada, listo, instOk, instaladas, faltan, aditiva, deductiva, done, notas) {
+        return {
+          id, clavePartida: clave, codigo, desc, criterio,
+          cantContrato: contrato, cantActualizada: actualizada,
+          listoImpresion: listo, instalacionOk: instOk,
+          instaladasVal: instaladas, faltanVal: faltan,
+          aditivaVal: aditiva, deductivaVal: deductiva,
+          done, notas, customImg: null, instalacionImg: null
+        };
+      }
+
+      /* ============================================================
+         2. PERSISTENCE
+         One storage key, one save function, one load function.
+         Every mutating action ends by calling commit(), so there is
+         exactly one place that can forget to save — and it doesn't.
+         ============================================================ */
+
+      const STORAGE_KEY = 'metrorrey_app_state_v2';
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ stations, ui }));
+          setSaveIndicator('ok');
+        } catch (err) {
+          console.error('No se pudo guardar el estado:', err);
+          setSaveIndicator('error');
+          showToast('No se pudo guardar: probablemente hay demasiadas fotos. Elimina algunas para liberar espacio.', 'error');
+        }
+        pushStateToCloud();
+      }
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return false;
+          const parsed = JSON.parse(raw);
+          if (!parsed || !Array.isArray(parsed.stations) || parsed.stations.length === 0) return false;
+          stations = parsed.stations;
+          if (parsed.ui) {
+            ui.activeStationId = parsed.ui.activeStationId || stations[0].id;
+            ui.activeMainTab = parsed.ui.activeMainTab || 'stations';
+            ui.activeStationTab = parsed.ui.activeStationTab || 'checklist';
+          }
+          return true;
+        } catch (err) {
+          console.error('No se pudo restaurar el estado guardado (se usará la información de fábrica):', err);
+          return false;
+        }
+      }
+
+      function setSaveIndicator(status) {
+        const dot = document.getElementById('save-dot');
+        const text = document.getElementById('save-text');
+        if (!dot || !text) return;
+        if (status === 'ok') {
+          dot.className = 'save-dot bg-emerald-400';
+          text.textContent = 'Guardado ' + new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+        } else {
+          dot.className = 'save-dot bg-rose-400';
+          text.textContent = 'Error al guardar';
+        }
+      }
+
+      /* Single point every action calls after mutating state: persist,
+         then redraw whatever is on screen. Nothing else should call
+         saveState() or the render functions directly. */
+      function commit() {
+        saveState();
+        renderAll();
+      }
+
+      /* ============================================================
+         2.5 CLOUD SYNC (optional — Firebase Firestore)
+         Off by default: the app works exactly as before with only
+         localStorage. If the person pastes a Firebase config, every
+         `stations` write also goes to a single shared Firestore
+         document, and a real-time listener applies whatever anyone
+         else on the team saves. This is a simple "last write wins"
+         sync — good for a small team, not a full conflict-merge system.
+         `ui` (which tab/station someone is looking at) is intentionally
+         NOT synced — that's personal navigation state, not shared data.
+         ============================================================ */
+
+      const SYNC_CONFIG_KEY = 'metrorrey_sync_config_v1';
+      const SYNC_DOC_PATH = { collection: 'metrorrey_shared', doc: 'project_data' };
+      const SYNC_PROVIDER_KEY = 'metrorrey_sync_provider_v1';
+      const GITHUB_CONFIG_KEY = 'metrorrey_github_config_v1';
+      const GITHUB_POLL_MS = 45000;
+
+      let syncDb = null;
+      let syncUnsubscribe = null;
+      let syncApplyingRemote = false; // guards against re-broadcasting an update we just received
+      let syncProvider = null; // 'firebase' | 'github' | null
+      let syncGithubConfig = null;
+      let syncGithubSha = null; // last known file SHA, needed by GitHub's Contents API to update the file
+      let syncGithubPollTimer = null;
+      let syncGithubPushTimer = null;
+      let activeSyncTab = 'firebase'; // which panel is showing in the modal (independent of what's actually connected)
+
+      function setSyncIndicator(status, detail) {
+        const btn = document.getElementById('sync-indicator');
+        const text = document.getElementById('sync-text');
+        if (!btn || !text) return;
+        const icon = btn.querySelector('i');
+        const providerLabel = syncProvider === 'github' ? ' (GitHub)' : syncProvider === 'firebase' ? ' (Firebase)' : '';
+        const styles = {
+          disabled: { cls: 'text-slate-500', label: 'Sin sincronizar', iconName: 'cloud-off' },
+          connecting: { cls: 'text-amber-400', label: 'Conectando…', iconName: 'cloud' },
+          ok: { cls: 'text-emerald-400', label: `Sincronizado${providerLabel}`, iconName: 'cloud' },
+          error: { cls: 'text-rose-400', label: detail || 'Error de sincronización', iconName: 'cloud-off' }
+        };
+        const s = styles[status] || styles.disabled;
+        text.textContent = s.label;
+        if (icon) { icon.setAttribute('data-lucide', s.iconName); icon.className = `w-3 h-3 ${s.cls}`; }
+        safeCreateIcons();
+      }
+
+      function setSyncProviderTab(tab) {
+        activeSyncTab = tab;
+        document.getElementById('sync-tab-firebase').className = `px-4 py-2 rounded-lg text-xs font-bold transition ${tab === 'firebase' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`;
+        document.getElementById('sync-tab-github').className = `px-4 py-2 rounded-lg text-xs font-bold transition ${tab === 'github' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`;
+        document.getElementById('sync-panel-firebase').classList.toggle('hidden', tab !== 'firebase');
+        document.getElementById('sync-panel-firebase').classList.toggle('flex', tab === 'firebase');
+        document.getElementById('sync-panel-github').classList.toggle('hidden', tab !== 'github');
+        document.getElementById('sync-panel-github').classList.toggle('flex', tab === 'github');
+      }
+
+      function connectActiveSyncProvider() {
+        if (activeSyncTab === 'github') connectGithubSync();
+        else connectSync();
+      }
+
+      function openSyncModal() {
+        const savedConfig = localStorage.getItem(SYNC_CONFIG_KEY);
+        const savedGithub = localStorage.getItem(GITHUB_CONFIG_KEY);
+        document.getElementById('sync-config-input').value = savedConfig || '';
+        if (savedGithub) {
+          try {
+            const gh = JSON.parse(savedGithub);
+            document.getElementById('github-owner-input').value = gh.owner || '';
+            document.getElementById('github-repo-input').value = gh.repo || '';
+            document.getElementById('github-branch-input').value = gh.branch || 'main';
+            document.getElementById('github-path-input').value = gh.path || 'metrorrey-data.json';
+            document.getElementById('github-token-input').value = gh.token || '';
+          } catch (e) { /* ignore malformed saved config */ }
+        }
+        document.getElementById('sync-disconnect-btn').classList.toggle('hidden', !syncProvider);
+        setSyncProviderTab(syncProvider === 'github' ? 'github' : 'firebase');
+        renderSyncStatusBanner();
+        document.getElementById('modal-sync').classList.remove('hidden');
+        document.getElementById('modal-sync').classList.add('flex');
+        safeCreateIcons();
+      }
+
+      function closeSyncModal() {
+        document.getElementById('modal-sync').classList.add('hidden');
+        document.getElementById('modal-sync').classList.remove('flex');
+      }
+
+      function renderSyncStatusBanner() {
+        const banner = document.getElementById('sync-status-banner');
+        if (!banner) return;
+        if (syncProvider) {
+          const label = syncProvider === 'github' ? 'GitHub (tu repositorio)' : 'Firebase (tiempo real)';
+          banner.className = 'p-3 rounded-xl border text-xs font-bold flex items-center gap-2 bg-emerald-50 border-emerald-200 text-emerald-700';
+          banner.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> Conectado vía ${label} — los datos se comparten con tu equipo.`;
+        } else {
+          banner.className = 'p-3 rounded-xl border text-xs font-bold flex items-center gap-2 bg-slate-50 border-slate-200 text-slate-600';
+          banner.innerHTML = '<i data-lucide="info" class="w-4 h-4"></i> No conectado — los datos solo se guardan en este navegador.';
+        }
+        safeCreateIcons();
+      }
+
+      // Parses a pasted firebaseConfig object. Firebase's console gives you a
+      // JS object literal (unquoted keys), not strict JSON, so we evaluate it
+      // as an expression rather than JSON.parse — safe here because it's the
+      // person's own trusted paste, never external data.
+      function parseFirebaseConfigText(text) {
+        let trimmed = text.trim();
+        if (!trimmed) throw new Error('Pega tu configuración de Firebase primero.');
+        // Accept either a bare object, or the full snippet Firebase's console
+        // actually shows you (e.g. "const firebaseConfig = { ... };").
+        trimmed = trimmed.replace(/^(?:export\s+)?(?:const|let|var)\s+\w+\s*=\s*/, '').replace(/;\s*$/, '');
+        const obj = Function(`"use strict"; return (${trimmed});`)();
+        if (!obj || !obj.apiKey || !obj.projectId) throw new Error('Ese texto no parece un firebaseConfig válido (falta apiKey o projectId).');
+        return obj;
+      }
+
+      function connectSync() {
+        action('conectar sincronización', () => {
+          const text = document.getElementById('sync-config-input').value;
+          let config;
+          try {
+            config = parseFirebaseConfigText(text);
+          } catch (err) {
+            showToast(err.message, 'error');
+            return;
+          }
+          disconnectCurrentProvider();
+          syncProvider = 'firebase';
+          setSyncIndicator('connecting');
+          startFirebaseSync(config, /*isInitialConnect*/ true);
+        });
+      }
+
+      function disconnectCurrentProvider() {
+        if (syncUnsubscribe) { syncUnsubscribe(); syncUnsubscribe = null; }
+        if (syncGithubPollTimer) { clearInterval(syncGithubPollTimer); syncGithubPollTimer = null; }
+        if (syncGithubPushTimer) { clearTimeout(syncGithubPushTimer); syncGithubPushTimer = null; }
+        syncDb = null;
+        syncGithubConfig = null;
+        syncGithubSha = null;
+      }
+
+      function disableSync() {
+        action('desconectar sincronización', () => {
+          disconnectCurrentProvider();
+          syncProvider = null;
+          localStorage.removeItem(SYNC_CONFIG_KEY);
+          localStorage.removeItem(GITHUB_CONFIG_KEY);
+          localStorage.removeItem(SYNC_PROVIDER_KEY);
+          setSyncIndicator('disabled');
+          renderSyncStatusBanner();
+          document.getElementById('sync-disconnect-btn').classList.add('hidden');
+          showToast('Sincronización desconectada. Los datos siguen guardados en este navegador.', 'info');
+        });
+      }
+
+      let pendingSyncConflict = null; // { cloudStations, localStations } while the person decides
+
+      // Normalizes a stations list the same way ensureStationDefaults/recalculateItem
+      // would, on a deep copy, purely for comparison purposes. Without this, comparing
+      // raw cloud JSON against already-normalized local data would almost always look
+      // "different" even when the actual content is identical — just because local
+      // data has extra default fields (like priceListRows) that an older save might
+      // not have — causing a false-positive conflict prompt on every single reload.
+      function canonicalStationsJson(list) {
+        try {
+          const clone = JSON.parse(JSON.stringify(list));
+          clone.forEach(st => {
+            ensureStationDefaults(st);
+            st.checklist.forEach(item => recalculateItem(item));
+          });
+          return JSON.stringify(clone);
+        } catch (err) {
+          return JSON.stringify(list); // best-effort fallback, shouldn't normally happen
+        }
+      }
+
+      function summarizeStationsForConflict(list) {
+        const stationCount = list.length;
+        const itemCount = list.reduce((sum, st) => sum + (st.checklist ? st.checklist.length : 0), 0);
+        const photoCount = list.reduce((sum, st) => sum + (st.checklist ? st.checklist.filter(i => i.customImg || i.instalacionImg).length : 0), 0);
+        return `${stationCount} estación(es) · ${itemCount} señal(es) en tabla de control · ${photoCount} con foto`;
+      }
+
+      function resolveSyncConflict(choice) {
+        action('resolver conflicto de sincronización', () => {
+          if (!pendingSyncConflict) return;
+          document.getElementById('modal-sync-conflict').classList.add('hidden');
+          document.getElementById('modal-sync-conflict').classList.remove('flex');
+
+          if (choice === 'cloud') {
+            syncApplyingRemote = true;
+            stations = pendingSyncConflict.cloudStations;
+            stations.forEach(st => ensureStationDefaults(st));
+            stations.forEach(st => st.checklist.forEach(item => recalculateItem(item)));
+            if (!stations.some(st => st.id === ui.activeStationId)) ui.activeStationId = stations[0].id;
+            saveState();
+            renderAll();
+            syncApplyingRemote = false;
+            showToast('Se aplicaron los datos de la nube. Los datos que tenías solo en este navegador se descartaron.', 'info');
+          } else {
+            // Keep local data and push it up, overwriting the cloud.
+            commit(); // saveState() will push the current (local) `stations` to the cloud
+            showToast('Se subieron tus datos locales a la nube, reemplazando lo que había ahí.', 'info');
+          }
+          pendingSyncConflict = null;
+        });
+      }
+
+      function startFirebaseSync(config, isInitialConnect) {
+        if (typeof firebase === 'undefined') {
+          setSyncIndicator('error', 'Firebase no cargó');
+          showToast('La librería de Firebase no cargó (revisa tu conexión a internet) — no se pudo conectar.', 'error');
+          return;
+        }
+        try {
+          if (syncUnsubscribe) { syncUnsubscribe(); syncUnsubscribe = null; }
+          const appName = 'metrorrey-' + Date.now(); // avoid "already exists" if reconnecting
+          const app = firebase.initializeApp(config, appName);
+          syncDb = firebase.firestore(app);
+          const docRef = syncDb.collection(SYNC_DOC_PATH.collection).doc(SYNC_DOC_PATH.doc);
+
+          syncUnsubscribe = docRef.onSnapshot(
+            snap => {
+              setSyncIndicator('ok');
+              const data = snap.data();
+              const cloudStations = (data && Array.isArray(data.stations) && data.stations.length > 0) ? data.stations : null;
+
+              if (isInitialConnect) {
+                const configInputVal = document.getElementById('sync-config-input').value.trim();
+                if (configInputVal) localStorage.setItem(SYNC_CONFIG_KEY, configInputVal);
+                localStorage.setItem(SYNC_PROVIDER_KEY, 'firebase');
+                renderSyncStatusBanner();
+                document.getElementById('sync-disconnect-btn').classList.remove('hidden');
+                isInitialConnect = false;
+
+                if (!cloudStations) {
+                  // Nothing in the cloud yet — push what we already have locally as the starting point.
+                  pushStateToCloud();
+                  return;
+                }
+                const sameAsLocal = canonicalStationsJson(cloudStations) === canonicalStationsJson(stations);
+                if (!sameAsLocal) {
+                  // Both sides have real, different data — never guess. Ask the person.
+                  pendingSyncConflict = { cloudStations, localStations: stations };
+                  document.getElementById('sync-conflict-cloud-summary').textContent = summarizeStationsForConflict(cloudStations);
+                  document.getElementById('sync-conflict-local-summary').textContent = summarizeStationsForConflict(stations);
+                  closeSyncModal();
+                  document.getElementById('modal-sync-conflict').classList.remove('hidden');
+                  document.getElementById('modal-sync-conflict').classList.add('flex');
+                  safeCreateIcons();
+                  return;
+                }
+                // Identical already — nothing to resolve, fall through to apply normally.
+              }
+
+              if (!cloudStations) return; // cloud briefly empty mid-write; keep current state, next snapshot will settle it
+
+              syncApplyingRemote = true;
+              stations = cloudStations;
+              stations.forEach(st => ensureStationDefaults(st));
+              stations.forEach(st => st.checklist.forEach(item => recalculateItem(item)));
+              if (!stations.some(st => st.id === ui.activeStationId)) ui.activeStationId = stations[0].id;
+              saveState(); // keep local cache in sync too
+              renderAll();
+              syncApplyingRemote = false;
+            },
+            err => {
+              console.error('Error de sincronización con Firestore:', err);
+              setSyncIndicator('error', 'Error de conexión');
+              showToast('No se pudo conectar con la nube. Revisa tu configuración y las reglas de Firestore.', 'error');
+            }
+          );
+        } catch (err) {
+          console.error('No se pudo iniciar Firebase:', err);
+          setSyncIndicator('error', 'Configuración inválida');
+          showToast(`No se pudo conectar: ${err.message}`, 'error');
+        }
+      }
+
+      // Single entry point every save calls; dispatches to whichever
+      // provider (or none) is currently connected.
+      function pushStateToCloud() {
+        if (syncApplyingRemote) return;
+        if (syncProvider === 'firebase') pushStateToFirestore();
+        else if (syncProvider === 'github') pushStateToGithubDebounced();
+      }
+
+      function pushStateToFirestore() {
+        if (!syncDb) return;
+        syncDb.collection(SYNC_DOC_PATH.collection).doc(SYNC_DOC_PATH.doc)
+          .set({ stations, updatedAt: new Date().toISOString() })
+          .catch(err => {
+            console.error('No se pudo sincronizar con la nube:', err);
+            setSyncIndicator('error', 'No se pudo guardar en la nube');
+            if (String(err.message || '').toLowerCase().includes('exceeds') || String(err.code || '').includes('invalid-argument')) {
+              showToast('Los datos son demasiado grandes para sincronizar (probablemente por las fotos). Elimina algunas fotos o desconecta la sincronización.', 'error');
+            } else {
+              showToast('No se pudo guardar en la nube (se sigue guardando en este navegador).', 'error');
+            }
+          });
+      }
+
+      /* ---------- GitHub repository as shared storage ----------
+         Uses the GitHub Contents API to read/write a single JSON file in
+         the person's own repository — no third-party account needed
+         beyond GitHub itself. There's no push notification like
+         Firestore, so a teammate's changes show up on the next poll
+         (~45s) or the next reload, and every save creates a commit, so
+         writes are debounced to avoid one commit per keystroke. */
+
+      function githubApiUrl(config) {
+        return `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${encodeURIComponent(config.path)}?ref=${encodeURIComponent(config.branch)}`;
+      }
+
+      function utf8ToBase64(str) {
+        return btoa(unescape(encodeURIComponent(str)));
+      }
+      function base64ToUtf8(b64) {
+        return decodeURIComponent(escape(atob(b64.replace(/\n/g, ''))));
+      }
+
+      function isBlankBase64(str) {
+        return !str || str.replace(/\s/g, '') === '';
+      }
+
+      function safeParseGithubContent(base64Content) {
+        if (isBlankBase64(base64Content)) return null;
+        try {
+          return JSON.parse(base64ToUtf8(base64Content));
+        } catch (err) {
+          console.warn('No se pudo interpretar el contenido del archivo de GitHub (se continúa sin sus datos):', err);
+          return null;
+        }
+      }
+
+      async function safeResJson(res) {
+        try {
+          return await res.json();
+        } catch (err) {
+          console.warn('La respuesta de GitHub no se pudo leer como JSON:', err);
+          return null;
+        }
+      }
+
+      async function fetchGithubFile(config) {
+        const res = await fetch(githubApiUrl(config), {
+          headers: { Authorization: `Bearer ${config.token}`, Accept: 'application/vnd.github+json' }
+        });
+        if (res.status === 404) return { data: null, sha: null };
+        if (!res.ok) {
+          const body = await safeResJson(res);
+          throw new Error(`GitHub respondió ${res.status}: ${(body && body.message) || 'error desconocido'}`);
+        }
+        const json = await safeResJson(res);
+        if (!json) throw new Error('GitHub no devolvió una respuesta legible — vuelve a intentarlo en un momento.');
+
+        // The Contents API only inlines file content up to 1MB. Beyond that
+        // (easy to hit once several stations have photos), `content` comes
+        // back blank (missing, empty, or just whitespace) even though the
+        // file exists — the sha is still valid, but we need the Git Blobs
+        // API (up to 100MB) to actually read it.
+        if (isBlankBase64(json.content) && json.sha) {
+          const blobRes = await fetch(
+            `https://api.github.com/repos/${config.owner}/${config.repo}/git/blobs/${json.sha}`,
+            { headers: { Authorization: `Bearer ${config.token}`, Accept: 'application/vnd.github+json' } }
+          );
+          if (!blobRes.ok) return { data: null, sha: json.sha }; // can't read content, but sha is still usable for a push
+          const blobJson = await safeResJson(blobRes);
+          return { data: blobJson ? safeParseGithubContent(blobJson.content) : null, sha: json.sha };
+        }
+
+        return { data: safeParseGithubContent(json.content), sha: json.sha || null };
+      }
+
+      function getGithubConfigFromInputs() {
+        const owner = document.getElementById('github-owner-input').value.trim();
+        const repo = document.getElementById('github-repo-input').value.trim();
+        const branch = document.getElementById('github-branch-input').value.trim() || 'main';
+        const path = document.getElementById('github-path-input').value.trim() || 'metrorrey-data.json';
+        const token = document.getElementById('github-token-input').value.trim();
+        if (!owner || !repo || !token) throw new Error('Completa usuario, repositorio y el token de acceso.');
+        return { owner, repo, branch, path, token };
+      }
+
+      function connectGithubSync() {
+        action('conectar sincronización con GitHub', () => {
+          let config;
+          try {
+            config = getGithubConfigFromInputs();
+          } catch (err) {
+            showToast(err.message, 'error');
+            return;
+          }
+          disconnectCurrentProvider();
+          syncProvider = 'github';
+          syncGithubConfig = config;
+          setSyncIndicator('connecting');
+          startGithubSync(true);
+        });
+      }
+
+      async function startGithubSync(isInitialConnect) {
+        try {
+          const { data, sha } = await fetchGithubFile(syncGithubConfig);
+          syncGithubSha = sha;
+          const cloudStations = (data && Array.isArray(data.stations) && data.stations.length > 0) ? data.stations : null;
+
+          if (isInitialConnect) {
+            localStorage.setItem(GITHUB_CONFIG_KEY, JSON.stringify(syncGithubConfig));
+            localStorage.setItem(SYNC_PROVIDER_KEY, 'github');
+            renderSyncStatusBanner();
+            document.getElementById('sync-disconnect-btn').classList.remove('hidden');
+            setSyncIndicator('ok');
+
+            if (!cloudStations) {
+              await pushStateToGithubNow(); // nothing in the repo yet — push what we have locally as the starting point
+            } else {
+              const sameAsLocal = canonicalStationsJson(cloudStations) === canonicalStationsJson(stations);
+              if (!sameAsLocal) {
+                pendingSyncConflict = { cloudStations, localStations: stations };
+                document.getElementById('sync-conflict-cloud-summary').textContent = summarizeStationsForConflict(cloudStations);
+                document.getElementById('sync-conflict-local-summary').textContent = summarizeStationsForConflict(stations);
+                closeSyncModal();
+                document.getElementById('modal-sync-conflict').classList.remove('hidden');
+                document.getElementById('modal-sync-conflict').classList.add('flex');
+                safeCreateIcons();
+              } else {
+                applyRemoteStations(cloudStations);
+              }
+            }
+            startGithubPolling();
+          } else if (cloudStations) {
+            applyRemoteStations(cloudStations);
+          }
+        } catch (err) {
+          console.error('Error de sincronización con GitHub:', err);
+          setSyncIndicator('error', 'Error de conexión');
+          showToast(`No se pudo conectar con GitHub: ${err.message}`, 'error');
+        }
+      }
+
+      function applyRemoteStations(cloudStations) {
+        syncApplyingRemote = true;
+        stations = cloudStations;
+        stations.forEach(st => ensureStationDefaults(st));
+        stations.forEach(st => st.checklist.forEach(item => recalculateItem(item)));
+        if (!stations.some(st => st.id === ui.activeStationId)) ui.activeStationId = stations[0].id;
+        saveState();
+        renderAll();
+        syncApplyingRemote = false;
+      }
+
+      function startGithubPolling() {
+        if (syncGithubPollTimer) clearInterval(syncGithubPollTimer);
+        syncGithubPollTimer = setInterval(async () => {
+          if (!syncGithubConfig || syncProvider !== 'github') return;
+          try {
+            const { data, sha } = await fetchGithubFile(syncGithubConfig);
+            if (sha && sha !== syncGithubSha && data && Array.isArray(data.stations)) {
+              syncGithubSha = sha;
+              applyRemoteStations(data.stations);
+            }
+            setSyncIndicator('ok');
+          } catch (err) {
+            console.error('Error revisando cambios en GitHub:', err);
+            setSyncIndicator('error', 'Error de conexión');
+          }
+        }, GITHUB_POLL_MS);
+      }
+
+      let githubPushInFlight = false;
+      let githubPushQueued = false;
+
+      function pushStateToGithubDebounced() {
+        if (syncGithubPushTimer) clearTimeout(syncGithubPushTimer);
+        syncGithubPushTimer = setTimeout(() => { pushStateToGithubNow(); }, 4000);
+      }
+
+      async function pushStateToGithubNow() {
+        if (!syncGithubConfig || syncApplyingRemote) return;
+        if (githubPushInFlight) {
+          // Another push is already running — don't start a second one that
+          // would race it (this was the real cause of repeated 409s even
+          // with retries: two overlapping pushes kept invalidating each
+          // other's sha). Just remember to push again once this one settles.
+          githubPushQueued = true;
+          return;
+        }
+        githubPushInFlight = true;
+        try {
+          await pushStateToGithubNowInner();
+        } finally {
+          githubPushInFlight = false;
+          if (githubPushQueued) {
+            githubPushQueued = false;
+            pushStateToGithubNow();
+          }
+        }
+      }
+
+      async function pushStateToGithubNowInner() {
+        const payload = { stations, updatedAt: new Date().toISOString() };
+        const content = utf8ToBase64(JSON.stringify(payload, null, 2));
+        const MAX_ATTEMPTS = 4;
+
+        try {
+          for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            const body = {
+              message: `Actualizar datos — ${new Date().toISOString()}`,
+              content,
+              branch: syncGithubConfig.branch
+            };
+            if (syncGithubSha) body.sha = syncGithubSha;
+
+            const res = await fetch(githubApiUrl(syncGithubConfig).split('?')[0], {
+              method: 'PUT',
+              headers: {
+                Authorization: `Bearer ${syncGithubConfig.token}`,
+                Accept: 'application/vnd.github+json',
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(body)
+            });
+
+            if (res.ok) {
+              const json = await safeResJson(res);
+              if (json && json.content) syncGithubSha = json.content.sha;
+              setSyncIndicator('ok');
+              return;
+            }
+
+            if (res.status === 409 && attempt < MAX_ATTEMPTS) {
+              // Someone else (or another tab) committed in between — refetch the
+              // latest sha, briefly back off so we don't just collide again, then retry.
+              await new Promise(r => setTimeout(r, 300 * attempt));
+              const latest = await fetchGithubFile(syncGithubConfig);
+              syncGithubSha = latest.sha;
+              continue;
+            }
+
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(`GitHub respondió ${res.status}: ${errBody.message || 'error desconocido'}`);
+          }
+        } catch (err) {
+          console.error('No se pudo guardar en GitHub:', err);
+          setSyncIndicator('error', 'No se pudo guardar en GitHub');
+          const looksLikeSize = String(err.message || '').includes('422') || String(err.message || '').toLowerCase().includes('too large');
+          const sizeHint = looksLikeSize ? ' Esto puede deberse a que los datos son muy grandes (muchas fotos) o a otra validación de GitHub — el mensaje exacto de arriba dice cuál.' : '';
+          showToast(`No se pudo guardar en GitHub: ${err.message}.${sizeHint} (se sigue guardando en este navegador).`, 'error');
+        }
+      }
+
+      // Auto-reconnect if this browser already has a saved cloud configuration.
+      function autoConnectSyncIfConfigured() {
+        const provider = localStorage.getItem(SYNC_PROVIDER_KEY) || (localStorage.getItem(SYNC_CONFIG_KEY) ? 'firebase' : null);
+        if (!provider) return;
+
+        if (provider === 'github') {
+          const saved = localStorage.getItem(GITHUB_CONFIG_KEY);
+          if (!saved) return;
+          try {
+            syncGithubConfig = JSON.parse(saved);
+            syncProvider = 'github';
+            setSyncIndicator('connecting');
+            // Always treat the first sync of a page load as "initial" so the
+            // conflict check runs — this is what protects against silently
+            // overwriting local data with different cloud data on reload.
+            startGithubSync(true);
+          } catch (err) {
+            console.warn('No se pudo reconectar automáticamente a GitHub:', err);
+            setSyncIndicator('error', 'Config. guardada inválida');
+          }
+          return;
+        }
+
+        const saved = localStorage.getItem(SYNC_CONFIG_KEY);
+        if (!saved) return;
+        try {
+          const config = parseFirebaseConfigText(saved);
+          syncProvider = 'firebase';
+          setSyncIndicator('connecting');
+          startFirebaseSync(config, true);
+        } catch (err) {
+          console.warn('No se pudo reconectar automáticamente a la sincronización guardada:', err);
+          setSyncIndicator('error', 'Config. guardada inválida');
+        }
+      }
+
+      /* ============================================================
+         3. ERROR-SAFE ACTIONS
+         Every function wired to an onclick/onchange in the HTML is
+         wrapped through here. If something throws, the person sees a
+         clear message instead of a silently broken screen, and we log
+         details to the console for debugging — the state itself is
+         only ever mutated by the code that already ran successfully,
+         so a failed action can't leave things half-updated.
+         ============================================================ */
+
+      function action(label, fn) {
+        try {
+          fn();
+        } catch (err) {
+          console.error(`[${label}]`, err);
+          showToast(`No se pudo completar: ${label}. Revisa la consola para más detalles.`, 'error');
+        }
+      }
+
+      /* ============================================================
+         4. DATA HELPERS (pure — no DOM, no globals mutated beyond args)
+         ============================================================ */
+
+      function normalizeText(s) {
+        return (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+      }
+
+      function ensureStationDefaults(st) {
+        if (!Array.isArray(st.checklist)) st.checklist = [];
+        if (!st.minuta) {
+          st.minuta = {
+            fecha: '2026-07-21',
+            asistentes: 'Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)',
+            acuerdos: '1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2.'
+          };
+        }
+        if (!st.presupuesto) {
+          st.presupuesto = { base: 0, aditivas: [], deductivas: [], priceList: {}, priceListRows: [] };
+        }
+        if (!st.presupuesto.priceList) st.presupuesto.priceList = {};
+        if (!st.presupuesto.priceListRows) st.presupuesto.priceListRows = [];
+        return st;
+      }
+
+      function getStation(id) {
+        return stations.find(s => s.id === id) || stations[0];
+      }
+
+      function getActiveStation() {
+        return getStation(ui.activeStationId);
+      }
+
+      function clampInt(val, min, max) {
+        let n = Math.round(Number(val));
+        if (isNaN(n)) n = 0;
+        if (n < min) n = min;
+        if (max !== undefined && n > max) n = max;
+        return n;
+      }
+
+      function getTotalPzas(item) {
+        const c = Math.max(0, Number(item.cantContrato) || 0);
+        const a = Math.max(0, Number(item.cantActualizada) || 0);
+        return a > 0 ? a : c;
+      }
+
+      /* The single source of truth for cross-field consistency. Any
+         numeric edit to an item must go through here before it's
+         rendered, so Instaladas+Faltan always add up to the total,
+         Aditiva/Deductiva are always derived (never hand-edited into
+         an inconsistent state), and Instalación OK always reflects
+         whether every piece is actually placed.
+
+         If the person types an Instaladas/Faltan value that exceeds the
+         current total (most commonly because Contrato/Actualizada are
+         still 0), we raise Cantidad Actualizada to fit what they entered
+         instead of silently clamping it back down — otherwise typing an
+         installed count on a row with no quantity yet defined would look
+         like the app is rejecting every keystroke. */
+      function recalculateItem(item, changedField) {
+        item.cantContrato = clampInt(item.cantContrato, 0);
+        item.cantActualizada = clampInt(item.cantActualizada, 0);
+
+        if (changedField === 'instaladasVal' || changedField === 'faltanVal') {
+          let total = getTotalPzas(item);
+          if (changedField === 'instaladasVal') {
+            const desired = clampInt(item.instaladasVal, 0);
+            if (desired > total) { item.cantActualizada = desired; total = getTotalPzas(item); }
+            item.instaladasVal = clampInt(desired, 0, total);
+            item.faltanVal = total - item.instaladasVal;
+          } else {
+            const desiredFaltan = clampInt(item.faltanVal, 0);
+            const desiredTotal = item.instaladasVal + desiredFaltan; // keep instaladas as-is, grow total to cover both
+            if (desiredTotal > total) { item.cantActualizada = desiredTotal; total = getTotalPzas(item); }
+            item.faltanVal = clampInt(desiredFaltan, 0, total);
+            item.instaladasVal = total - item.faltanVal;
+          }
+        } else {
+          const total = getTotalPzas(item);
+          item.instaladasVal = clampInt(item.instaladasVal, 0, total);
+          item.faltanVal = total - item.instaladasVal;
+        }
+
+        item.aditivaVal = Math.max(0, item.cantActualizada - item.cantContrato);
+        item.deductivaVal = Math.max(0, item.cantContrato - item.cantActualizada);
+        const finalTotal = getTotalPzas(item);
+        item.instalacionOk = finalTotal > 0 && item.instaladasVal >= finalTotal;
+        return item;
+      }
+
+      function isItemInconsistent(item) {
+        const total = getTotalPzas(item);
+        if (total === 0 && (item.instaladasVal > 0 || item.instalacionOk)) return true;
+        if (item.instaladasVal + item.faltanVal !== total) return true;
+        if (item.done && !item.instalacionOk) return true;
+        return false;
+      }
+
+      function buildChecklistItem(idx, currentSenId, curs, senal, cantContrato, cantActualizada, obs, customImg) {
+        const item = {
+          id: Date.now() + idx + Math.floor(Math.random() * 1000),
+          clavePartida: currentSenId || `SEÑ.${idx + 1}`,
+          codigo: curs || senal || `IMP-${idx + 1}`,
+          desc: senal || curs || 'Señal importada',
+          criterio: '', cantContrato, cantActualizada,
+          listoImpresion: false, instalacionOk: false,
+          instaladasVal: 0, faltanVal: 0, aditivaVal: 0, deductivaVal: 0,
+          done: false, notas: obs, customImg: customImg || null, instalacionImg: null
+        };
+        recalculateItem(item);
+        return item;
+      }
+
+      function safeCreateIcons() {
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+          window.lucide.createIcons();
+        } else {
+          console.warn('Lucide no cargó todavía desde el CDN; se omiten los íconos por ahora.');
+        }
+      }
+
+      function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const toast = document.createElement('div');
+        const bg = type === 'error' ? 'bg-rose-600 text-white' : (type === 'success' ? 'bg-slate-900 text-white' : 'bg-sky-600 text-white');
+        const icon = type === 'error' ? 'alert-circle' : 'check-circle';
+        const iconColor = type === 'error' ? 'text-white' : 'text-emerald-400';
+        toast.className = `${bg} px-4 py-3 rounded-xl shadow-xl text-xs font-bold transition transform translate-y-2 animate-in fade-in duration-200 pointer-events-auto flex items-center gap-2`;
+        toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 ${iconColor}"></i> <span></span>`;
+        toast.querySelector('span').textContent = message;
+        container.appendChild(toast);
+        safeCreateIcons();
+        setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3500);
+      }
+
+      /* ============================================================
+         5. RENDER
+         Every render function reads from `stations`/`ui` and writes to
+         the DOM — never the other way around. `renderAll()` is the
+         only entry point called after a mutation.
+         ============================================================ */
+
+      function renderAll() {
+        renderStationsTabs();
+        if (ui.activeMainTab === 'stations') {
+          renderActiveStationView();
+        } else if (ui.activeMainTab === 'analytics') {
+          renderAnalytics();
+        } else if (ui.activeMainTab === 'presupuesto') {
+          renderBudgetView();
+        } else if (ui.activeMainTab === 'resumen') {
+          renderResumenView();
+        }
+        safeCreateIcons();
+      }
+
+      const NAV_TABS = ['stations', 'analytics', 'presupuesto', 'resumen'];
+
+      function switchMainTab(tab) {
+        action('cambiar de pestaña', () => {
+          ui.activeMainTab = tab;
+          NAV_TABS.forEach(t => {
+            const btn = document.getElementById(`nav-${t}`);
+            if (!btn) return;
+            btn.className = t === tab
+              ? 'px-4 py-2 rounded-lg text-xs font-medium transition flex items-center gap-2 tab-btn-active bg-slate-700/50 text-white'
+              : 'px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition flex items-center gap-2';
+          });
+          NAV_TABS.forEach(t => document.getElementById(`view-${t}`).classList.toggle('hidden', t !== tab));
+          if (tab === 'analytics') renderAnalytics();
+          if (tab === 'presupuesto') renderBudgetView();
+          if (tab === 'resumen') renderResumenView();
+          safeCreateIcons();
+          saveState();
+        });
+      }
+
+      function renderStationsTabs() {
+        const container = document.getElementById('stations-tabs-container');
+        container.innerHTML = stations.map(st => {
+          const active = ui.activeStationId === st.id;
+          return `
+          <div class="relative group">
+            <button onclick="setActiveStation('${st.id}')" class="pl-2.5 pr-4 py-2 rounded-xl transition border flex items-center gap-2.5 text-left ${active ? 'station-tab-active border-sky-600' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'}">
+              <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${active ? 'bg-white/20' : 'bg-white border border-slate-200'}">
+                <i data-lucide="building-2" class="w-4 h-4 ${active ? 'text-white' : 'text-sky-600'}"></i>
+              </div>
+              <div>
+                <div class="text-xs font-black leading-tight">${st.name}</div>
+                <div class="text-[10px] font-bold leading-tight uppercase tracking-wide ${active ? 'text-sky-100' : 'text-slate-400'}">${st.line}</div>
+              </div>
+            </button>
+            <button onclick="deleteStation('${st.id}')" title="Eliminar estación" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white border border-rose-300 text-rose-500 hover:bg-rose-500 hover:text-white shadow flex items-center justify-center transition">
+              <i data-lucide="x" class="w-3 h-3"></i>
+            </button>
+            <button onclick="openEditStationModal('${st.id}')" title="Editar estación" class="absolute -top-1.5 -right-7 w-5 h-5 rounded-full bg-white border border-sky-300 text-sky-600 hover:bg-sky-600 hover:text-white shadow flex items-center justify-center transition">
+              <i data-lucide="pencil" class="w-3 h-3"></i>
+            </button>
+          </div>`;
+        }).join('');
+      }
+
+      function setActiveStation(id) {
+        action('cambiar de estación', () => {
+          ui.activeStationId = id;
+          ui.activeStationTab = 'checklist';
+          renderStationsTabs();
+          renderActiveStationView();
+          safeCreateIcons();
+          saveState();
+        });
+      }
+
+      function switchStationTab(tab) {
+        action('cambiar de sección', () => {
+          ui.activeStationTab = tab;
+          renderActiveStationView();
+          safeCreateIcons();
+          saveState();
+        });
+      }
+
+      function renderActiveStationView() {
+        const station = getActiveStation();
+        const container = document.getElementById('station-detail-container');
+
+        container.innerHTML = `
+          <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 rounded-xl bg-sky-600 text-white flex items-center justify-center font-black text-lg shadow-md">${station.code}</div>
+              <div>
+                <div class="flex items-center gap-3">
+                  <h2 class="text-xl font-bold text-slate-900">Estación ${station.name}</h2>
+                  <span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-0.5 rounded-full font-bold">${station.status}</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">Control de Supervisión, Minuta de Trabajos e Instalación de Señalética • ${station.line}</p>
+              </div>
+            </div>
+            <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+              <button onclick="switchStationTab('checklist')" class="px-4 py-2 rounded-lg text-xs font-bold transition ${ui.activeStationTab === 'checklist' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}">Tabla de Control y Señales</button>
+              <button onclick="switchStationTab('minuta')" class="px-4 py-2 rounded-lg text-xs font-bold transition ${ui.activeStationTab === 'minuta' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}">Minuta de Reunión</button>
+            </div>
+          </div>
+
+          <div id="subview-checklist" class="${ui.activeStationTab === 'checklist' ? 'flex' : 'hidden'} flex-col gap-4">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
+              <div class="flex flex-wrap items-center gap-3 flex-1">
+                <div class="relative min-w-[240px] flex-1">
+                  <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+                  <input type="text" id="chk-search-input" oninput="renderChecklistItems()" placeholder="Buscar por código CURS, partida o descripción..." class="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 bg-slate-50">
+                </div>
+                <select id="chk-filter-status" onchange="renderChecklistItems()" class="text-xs border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus:ring-2 focus:ring-sky-500">
+                  <option value="ALL">Todos los estados</option>
+                  <option value="CHECKED">Completados (OK)</option>
+                  <option value="UNCHECKED">Pendientes</option>
+                  <option value="INCONSISTENT">Con inconsistencias</option>
+                </select>
+              </div>
+              <button onclick="addChecklistItem()" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold shadow flex items-center gap-2 transition">
+                <i data-lucide="plus" class="w-4 h-4"></i> Agregar Registro
+              </button>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div class="overflow-x-auto">
+                <table class="w-full border-collapse text-left">
+                  <thead>
+                    <tr class="border-b-2 border-slate-800 text-slate-900 font-bold text-center">
+                      <th class="p-2.5 border-r border-slate-300 bg-slate-200 w-24">SEÑ.ID</th>
+                      <th class="p-2.5 border-r border-slate-300 bg-slate-200 w-44">CURS - Código Único de Registro de Señal</th>
+                      <th class="p-2.5 border-r-2 border-slate-800 bg-slate-200">Señal &amp; Fotografía Real</th>
+                      <th class="p-2.5 border-r border-slate-300 table-control-header w-16">${station.line}</th>
+                      <th class="p-2.5 border-r border-slate-300 table-control-header w-20">${station.line}</th>
+                      <th class="p-2.5 border-r border-slate-300 bg-blue-100 text-blue-900 w-20">Impresión</th>
+                      <th class="p-3 border-r border-slate-300 bg-indigo-100 text-indigo-900 w-[26rem] text-center text-sm font-black">Instalación</th>
+                      <th class="p-2.5 border-r border-slate-300 bg-emerald-100 text-emerald-900 w-20">Aditiva</th>
+                      <th class="p-2.5 border-r border-slate-300 bg-rose-100 text-rose-900 w-20">Deductiva</th>
+                      <th class="p-2.5 border-r border-slate-300 table-control-header w-20">${station.line}</th>
+                      <th class="p-2.5 table-control-header min-w-[320px]">${station.name}</th>
+                    </tr>
+                  </thead>
+                  <tbody id="checklist-table-body" class="divide-y border-slate-800 divide-slate-300 text-slate-800 font-sans"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mt-2">
+              <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Total Partidas</div>
+                <div id="kpi-total" class="text-2xl font-black text-slate-800 mt-1.5">0</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">Registradas en esta estación</div>
+              </div>
+              <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="text-[11px] font-bold text-blue-600 uppercase tracking-wide">Listas para Impresión</div>
+                <div id="kpi-impresion" class="text-2xl font-black text-blue-700 mt-1.5">0</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">Aprobadas para producción</div>
+              </div>
+              <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="text-[11px] font-bold text-emerald-600 uppercase tracking-wide">Instalación OK</div>
+                <div id="kpi-instalacion" class="text-2xl font-black text-emerald-700 mt-1.5">0</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">Piezas completamente colocadas</div>
+              </div>
+              <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="text-[11px] font-bold text-amber-600 uppercase tracking-wide">Verificadas / Check</div>
+                <div id="kpi-verificadas" class="text-2xl font-black text-amber-700 mt-1.5">0</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">Confirmadas por supervisión</div>
+              </div>
+              <div class="bg-white p-5 rounded-2xl border-2 border-rose-200 shadow-sm">
+                <div class="text-[11px] font-bold text-rose-600 uppercase tracking-wide">Con Inconsistencias</div>
+                <div id="kpi-inconsistentes" class="text-2xl font-black text-rose-700 mt-1.5">0</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">Requieren revisión</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="subview-minuta" class="${ui.activeStationTab === 'minuta' ? 'flex' : 'hidden'} flex-col gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-4">
+              <div>
+                <h3 class="text-base font-bold text-slate-900">Minuta Oficial de Supervisión - Estación ${station.name}</h3>
+                <p class="text-xs text-slate-500">Registro de acuerdos, comitiva asistente y compromisos de entrega.</p>
+              </div>
+              <button onclick="exportStationMinutaPDF()" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow flex items-center gap-2 transition">
+                <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Minuta PDF
+              </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Fecha de Reunión / Visita</label>
+                  <input type="date" id="minuta-fecha" value="${station.minuta.fecha}" onchange="updateMinutaField('fecha', this.value)" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Asistentes y Representantes (Metrorrey / Contratista / ig Anuncios)</label>
+                  <textarea id="minuta-asistentes" rows="4" onchange="updateMinutaField('asistentes', this.value)" class="w-full text-xs p-3 border border-slate-200 rounded-xl bg-slate-50 leading-relaxed"></textarea>
+                </div>
+              </div>
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Acuerdos y Puntos Tratados</label>
+                  <textarea id="minuta-acuerdos" rows="6" onchange="updateMinutaField('acuerdos', this.value)" class="w-full text-xs p-3 border border-slate-200 rounded-xl bg-slate-50 leading-relaxed"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Textareas are set via .value assignment (not interpolated into the
+        // template) so embedded quotes/HTML in saved minuta text can never
+        // break the markup.
+        document.getElementById('minuta-asistentes').value = station.minuta.asistentes;
+        document.getElementById('minuta-acuerdos').value = station.minuta.acuerdos;
+
+        renderChecklistItems();
+      }
+
+      function updateMinutaField(field, val) {
+        action('actualizar minuta', () => {
+          const station = getActiveStation();
+          station.minuta[field] = val;
+          commit();
+        });
+      }
+
+      /* ---------- Checklist table ---------- */
+
+      function getSignalGraphicHtml(desc, code, customImg, itemId) {
+        if (customImg) {
+          return `<div class="flex flex-col items-center gap-1">
+            <img src="${customImg}" onclick="openImageLightbox('${customImg}', '${(code + ' - ' + desc).replace(/'/g, "\\'")}')" class="w-28 h-20 rounded-lg object-contain bg-slate-100 cursor-pointer border-2 border-slate-300 shadow hover:opacity-90 transition">
+            <button onclick="removeSignalPhoto(${itemId})" class="text-[10px] text-rose-600 hover:underline font-bold">Quitar foto</button>
+          </div>`;
+        }
+        const isDark = (desc || '').toLowerCase().includes('prohibido') || (desc || '').toLowerCase().includes('alto voltaje');
+        const badgeBg = isDark ? 'bg-rose-900 text-white border-rose-950' : 'bg-emerald-600 text-white border-emerald-700';
+        const iconName = isDark ? 'shield-alert' : 'info';
+        return `
+          <div class="flex items-center gap-3">
+            <div onclick="openImageLightboxForGraphic('${code}', '${(desc || '').replace(/'/g, "\\'")}', ${isDark})" class="w-28 h-20 rounded-xl ${badgeBg} flex flex-col items-center justify-center p-2 shadow-md cursor-pointer hover:scale-105 transition border-2 border-white/20">
+              <i data-lucide="${iconName}" class="w-8 h-8"></i>
+              <span class="text-[10px] font-mono font-bold tracking-tight mt-1">${code}</span>
+            </div>
+            <div class="flex-1">
+              <div class="text-xs font-bold text-slate-900 line-clamp-2">${desc}</div>
+              <button onclick="document.getElementById('sig-upload-${itemId}').click()" class="text-xs text-sky-600 hover:text-sky-800 font-bold flex items-center gap-1 mt-1 bg-sky-50 px-2 py-1 rounded border border-sky-200 w-fit">
+                <i data-lucide="camera" class="w-3.5 h-3.5"></i> Subir foto real
+              </button>
+              <input type="file" id="sig-upload-${itemId}" accept="image/*" class="hidden" onchange="uploadSignalPhoto(${itemId}, event)">
+            </div>
+          </div>`;
+      }
+
+      function renderChecklistItems() {
+        const station = getActiveStation();
+        const tbody = document.getElementById('checklist-table-body');
+        if (!tbody) return;
+
+        const searchVal = normalizeText(document.getElementById('chk-search-input')?.value || '');
+        const statusVal = document.getElementById('chk-filter-status')?.value || 'ALL';
+
+        station.checklist.forEach(item => recalculateItem(item));
+
+        if (station.checklist.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 text-xs">No hay registros en la tabla de control. Haz clic en "Agregar Registro".</td></tr>`;
+          updateChecklistSummary([]);
+          return;
+        }
+
+        const filtered = station.checklist.filter(item => {
+          const haystack = normalizeText([item.clavePartida, item.codigo, item.desc, item.notas].join(' '));
+          const matchesSearch = haystack.includes(searchVal);
+          let matchesStatus = true;
+          if (statusVal === 'CHECKED') matchesStatus = item.done;
+          else if (statusVal === 'UNCHECKED') matchesStatus = !item.done;
+          else if (statusVal === 'INCONSISTENT') matchesStatus = isItemInconsistent(item);
+          return matchesSearch && matchesStatus;
+        });
+
+        updateChecklistSummary(station.checklist);
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="11" class="p-6 text-center text-slate-400 text-xs">No se encontraron registros.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = filtered.map(item => {
+          const totalPzas = getTotalPzas(item);
+          const inconsistent = isItemInconsistent(item);
+          return `
+            <tr class="hover:bg-slate-50/80 transition text-xs border-b border-slate-300 ${inconsistent ? 'row-inconsistent' : ''}">
+              <td class="p-2.5 border-r border-slate-300 font-bold font-mono text-slate-800 text-center bg-slate-50/50 w-24">
+                ${item.clavePartida || 'SEÑ.1.01'}
+                ${inconsistent ? '<div class="mt-1 flex items-center justify-center gap-1 text-rose-600" title="Este registro tiene una inconsistencia de datos"><i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i></div>' : ''}
+              </td>
+              <td class="p-2.5 border-r border-slate-300 font-mono text-[11px] text-slate-700 text-center w-48 break-all">${item.codigo || '-'}</td>
+              <td class="p-2.5 border-r-2 border-slate-800">
+                ${getSignalGraphicHtml(item.desc, item.codigo, item.customImg, item.id)}
+                ${item.criterio ? `<div class="text-[10px] font-mono text-slate-500 mt-1 text-center">${item.criterio}</div>` : ''}
+              </td>
+              <td class="p-2.5 border-r border-slate-300 text-center font-bold text-slate-800 w-16">
+                <input type="number" min="0" value="${item.cantContrato}" onchange="updateChecklistField(${item.id}, 'cantContrato', this.value)" class="w-12 text-center border border-slate-200 rounded p-1 font-bold focus:ring-1 focus:ring-sky-500">
+              </td>
+              <td class="p-2.5 border-r border-slate-300 text-center font-bold text-sky-800 w-20">
+                <input type="number" min="0" value="${item.cantActualizada}" onchange="updateChecklistField(${item.id}, 'cantActualizada', this.value)" class="w-14 text-center border border-slate-200 rounded p-1 font-bold text-sky-700 focus:ring-1 focus:ring-sky-500">
+              </td>
+              <td class="p-2.5 border-r border-slate-300 text-center w-20 bg-blue-50/30">
+                <input type="checkbox" ${item.listoImpresion ? 'checked' : ''} onchange="updateChecklistField(${item.id}, 'listoImpresion', this.checked)" class="w-6 h-6 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer">
+              </td>
+              <td class="p-3 border-r border-slate-300 text-center w-[26rem] bg-indigo-50/50">
+                <div class="flex flex-col items-center gap-3 p-3.5 bg-white rounded-2xl border-2 border-indigo-300 shadow-md">
+                  <label class="flex items-center gap-2 cursor-default w-full px-1" title="Se marca automáticamente cuando Instaladas alcanza el total de piezas">
+                    <input type="checkbox" ${item.instalacionOk ? 'checked' : ''} disabled class="w-6 h-6 text-indigo-600 rounded border-slate-300 cursor-not-allowed opacity-90">
+                    <span class="text-sm font-black ${item.instalacionOk ? 'text-indigo-700' : 'text-slate-800'}">Instalación OK</span>
+                  </label>
+                  <div class="flex gap-3 w-full font-mono">
+                    <div class="flex-1 min-w-0 bg-indigo-50 p-2.5 rounded-xl border-2 border-indigo-300 text-center shadow-sm">
+                      <div class="text-xs text-indigo-900 font-extrabold mb-1 uppercase tracking-wider">Instaladas</div>
+                      <input type="number" min="0" max="${totalPzas}" value="${item.instaladasVal || 0}" onchange="updateChecklistField(${item.id}, 'instaladasVal', this.value)" style="min-width:5rem" class="block w-full box-border text-center border-2 border-indigo-500 rounded-xl text-indigo-950 font-black bg-white py-2 px-1 text-lg focus:ring-4 focus:ring-indigo-400">
+                    </div>
+                    <div class="flex-1 min-w-0 bg-amber-50 p-2.5 rounded-xl border-2 border-amber-300 text-center shadow-sm">
+                      <div class="text-xs text-amber-900 font-extrabold mb-1 uppercase tracking-wider">Faltan</div>
+                      <input type="number" min="0" max="${totalPzas}" value="${item.faltanVal || 0}" onchange="updateChecklistField(${item.id}, 'faltanVal', this.value)" style="min-width:5rem" class="block w-full box-border text-center border-2 border-amber-500 rounded-xl text-amber-950 font-black bg-white py-2 px-1 text-lg focus:ring-4 focus:ring-amber-400">
+                    </div>
+                  </div>
+                  <div class="text-[10px] text-slate-400 font-bold -mt-1">Total de piezas: ${totalPzas} (instaladas + faltan siempre suma el total)</div>
+                  ${item.instalacionImg ? `
+                    <div class="flex items-center gap-3 mt-1 w-full justify-between bg-indigo-50 p-2 rounded-xl border border-indigo-300">
+                      <img src="${item.instalacionImg}" onclick="openImageLightbox('${item.instalacionImg}', 'Evidencia Instalación: ${item.codigo}')" class="w-14 h-14 rounded-xl object-contain bg-slate-100 cursor-pointer border-2 border-indigo-600 hover:opacity-90 shadow" title="Ver foto de instalación">
+                      <button onclick="removeInstallationPhoto(${item.id})" class="text-xs text-rose-600 hover:bg-rose-100 px-3 py-2 rounded-lg font-bold">Quitar foto</button>
+                    </div>` : `
+                    <button onclick="document.getElementById('inst-upload-${item.id}').click()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-md transition w-full font-bold">
+                      <i data-lucide="camera" class="w-4 h-4"></i> <span>Subir Foto de Instalación</span>
+                    </button>
+                    <input type="file" id="inst-upload-${item.id}" accept="image/*" class="hidden" onchange="uploadInstallationPhoto(${item.id}, event)">`
+                  }
+                </div>
+              </td>
+              <td class="p-2.5 border-r border-slate-300 text-center w-20 bg-emerald-50/30">
+                <div class="w-14 mx-auto text-center border border-emerald-300 rounded p-1 font-bold text-emerald-700 bg-emerald-50" title="Calculado automáticamente: Actualizada - Contrato">${item.aditivaVal}</div>
+              </td>
+              <td class="p-2.5 border-r border-slate-300 text-center w-20 bg-rose-50/30">
+                <div class="w-14 mx-auto text-center border border-rose-300 rounded p-1 font-bold text-rose-700 bg-rose-50" title="Calculado automáticamente: Contrato - Actualizada">${item.deductivaVal}</div>
+              </td>
+              <td class="p-2.5 border-r border-slate-300 text-center w-20 bg-amber-50/30">
+                <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleChecklistItemDone(${item.id})" class="w-5 h-5 text-amber-600 rounded border-slate-400 focus:ring-amber-500 cursor-pointer">
+              </td>
+              <td class="p-2.5 min-w-[320px]">
+                <div class="flex items-start gap-2">
+                  <textarea onchange="updateChecklistField(${item.id}, 'notas', this.value)" placeholder="Escribir observaciones detalladas de campo aquí..." class="w-full text-xs p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 bg-white resize-y min-h-[80px] shadow-sm leading-relaxed"></textarea>
+                  <button onclick="deleteChecklistItem(${item.id})" class="text-slate-400 hover:text-rose-600 p-2 transition mt-1" title="Eliminar registro"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+              </td>
+            </tr>`;
+        }).join('');
+
+        // Notes are filled via .value (not interpolated into the template)
+        // so saved text with quotes/HTML can never break the row's markup.
+        const textareas = tbody.querySelectorAll('textarea');
+        filtered.forEach((item, idx) => { if (textareas[idx]) textareas[idx].value = item.notas || ''; });
+
+        safeCreateIcons();
+      }
+
+      function updateChecklistSummary(checklist) {
+        const total = checklist.length;
+        const impresion = checklist.filter(i => i.listoImpresion).length;
+        const instalacion = checklist.filter(i => i.instalacionOk).length;
+        const verificadas = checklist.filter(i => i.done).length;
+        const inconsistentes = checklist.filter(i => isItemInconsistent(i)).length;
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        set('kpi-total', total);
+        set('kpi-impresion', impresion);
+        set('kpi-instalacion', instalacion);
+        set('kpi-verificadas', `${verificadas} / ${total}`);
+        set('kpi-inconsistentes', inconsistentes);
+      }
+
+      function updateChecklistField(id, field, val) {
+        action('actualizar registro', () => {
+          const station = getActiveStation();
+          const item = station.checklist.find(i => i.id === id);
+          if (!item) return;
+
+          if (field === 'notas') { item.notas = val; commit(); return; }
+          if (field === 'listoImpresion') { item.listoImpresion = !!val; commit(); return; }
+
+          item[field] = val;
+          const totalBefore = getTotalPzas(item);
+          const cantActualizadaBefore = item.cantActualizada;
+          recalculateItem(item, field);
+          if ((field === 'instaladasVal' || field === 'faltanVal') && item.cantActualizada > cantActualizadaBefore) {
+            showToast(`La cantidad actualizada se ajustó a ${item.cantActualizada} para que la instalación capturada quepa en el total.`, 'info');
+          } else if (totalBefore !== getTotalPzas(item)) {
+            showToast('Se detectó una inconsistencia y fue corregida automáticamente.', 'info');
+          }
+          commit();
+        });
+      }
+
+      function toggleChecklistItemDone(id) {
+        action('verificar registro', () => {
+          const station = getActiveStation();
+          const item = station.checklist.find(i => i.id === id);
+          if (!item) return;
+          if (!item.done && !item.instalacionOk) {
+            showToast('No se puede verificar: la instalación aún no está completa (revisa Instaladas / Faltan).', 'error');
+            renderChecklistItems(); // revert the checkbox visually
+            return;
+          }
+          item.done = !item.done;
+          commit();
+        });
+      }
+
+      function deleteChecklistItem(id) {
+        action('eliminar registro', () => {
+          const station = getActiveStation();
+          const item = station.checklist.find(i => i.id === id);
+          if (!item) return;
+          const label = item.clavePartida || item.codigo || 'este registro';
+          requestConfirmation(`¿Seguro que deseas eliminar ${label}?`, () => {
+            station.checklist = station.checklist.filter(i => i.id !== id);
+            commit();
+            showToast('Registro eliminado correctamente.', 'info');
+          });
+        });
+      }
+
+      function addChecklistItem() {
+        action('agregar registro', () => {
+          const station = getActiveStation();
+          const newItem = buildChecklistItem(station.checklist.length, `SEÑ.${station.checklist.length + 1}`, `M2-${station.code}-S0${station.checklist.length + 1}`, 'Nueva Señal de Señalética', 1, 1);
+          newItem.criterio = 'Acrílico 6mm';
+          station.checklist.push(newItem);
+          commit();
+          showToast('Nuevo registro agregado a la tabla.', 'success');
+        });
+      }
+
+      function uploadSignalPhoto(id, event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => action('cargar foto de señal', () => {
+          const station = getActiveStation();
+          const item = station.checklist.find(i => i.id === id);
+          if (!item) return;
+          item.customImg = e.target.result;
+          commit();
+          showToast('Fotografía de señal cargada exitosamente.', 'success');
+        });
+        reader.onerror = () => showToast('No se pudo leer la imagen seleccionada.', 'error');
+        reader.readAsDataURL(file);
+      }
+
+      function removeSignalPhoto(id) {
+        action('quitar foto de señal', () => {
+          const station = getActiveStation();
+          const item = station.checklist.find(i => i.id === id);
+          if (!item) return;
+          item.customImg = null;
+          commit();
+        });
+      }
+
+      function uploadInstallationPhoto(id, event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => action('cargar foto de instalación', () => {
+          const station = getActiveStation();
+          const item = station.checklist.find(i => i.id === id);
+          if (!item) return;
+          item.instalacionImg = e.target.result;
+          commit();
+          showToast('Evidencia de instalación cargada con éxito.', 'success');
+        });
+        reader.onerror = () => showToast('No se pudo leer la imagen seleccionada.', 'error');
+        reader.readAsDataURL(file);
+      }
+
+      function removeInstallationPhoto(id) {
+        action('quitar foto de instalación', () => {
+          const station = getActiveStation();
+          const item = station.checklist.find(i => i.id === id);
+          if (!item) return;
+          item.instalacionImg = null;
+          commit();
+        });
+      }
+
+      function openImageLightbox(imgSrc, titleText) {
+        document.getElementById('lightbox-img').src = imgSrc;
+        document.getElementById('lightbox-title').textContent = titleText;
+        document.getElementById('modal-image-lightbox').classList.remove('hidden');
+        document.getElementById('modal-image-lightbox').classList.add('flex');
+      }
+
+      function openImageLightboxForGraphic(code, desc, isDark) {
+        const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
+          <rect width="600" height="400" fill="${isDark ? '#4c0519' : '#047857'}"/>
+          <rect x="30" y="30" width="540" height="340" fill="none" stroke="#ffffff" stroke-width="4" stroke-dasharray="10 10"/>
+          <text x="300" y="120" fill="#ffffff" font-size="32" font-family="sans-serif" font-weight="bold" text-anchor="middle">METRORREY - LÍNEA 2</text>
+          <text x="300" y="200" fill="#ffffff" font-size="24" font-family="sans-serif" text-anchor="middle">${code}</text>
+          <text x="300" y="260" fill="#fed7aa" font-size="18" font-family="sans-serif" text-anchor="middle">${desc}</text>
+        </svg>`;
+        openImageLightbox('data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString))), `${code} - ${desc}`);
+      }
+
+      function closeImageLightbox() {
+        document.getElementById('modal-image-lightbox').classList.add('hidden');
+        document.getElementById('modal-image-lightbox').classList.remove('flex');
+      }
+
+      /* ---------- Stations: create / delete ---------- */
+
+      let editingStationId = null; // null = creating a new station; otherwise the id being edited
+
+      function openNewStationModal() {
+        editingStationId = null;
+        document.getElementById('station-modal-title').textContent = 'Nueva Estación';
+        document.getElementById('station-modal-icon').setAttribute('data-lucide', 'plus-circle');
+        document.getElementById('station-modal-save-btn').textContent = 'Crear Estación';
+        document.getElementById('new-station-name').value = '';
+        document.getElementById('new-station-line').value = 'Línea 2';
+        document.getElementById('modal-new-station').classList.remove('hidden');
+        document.getElementById('modal-new-station').classList.add('flex');
+        safeCreateIcons();
+      }
+
+      function openEditStationModal(id) {
+        const station = stations.find(st => st.id === id);
+        if (!station) return;
+        editingStationId = id;
+        document.getElementById('station-modal-title').textContent = `Editar Estación: ${station.name}`;
+        document.getElementById('station-modal-icon').setAttribute('data-lucide', 'pencil');
+        document.getElementById('station-modal-save-btn').textContent = 'Guardar Cambios';
+        document.getElementById('new-station-name').value = station.name;
+        document.getElementById('new-station-line').value = station.line;
+        document.getElementById('modal-new-station').classList.remove('hidden');
+        document.getElementById('modal-new-station').classList.add('flex');
+        safeCreateIcons();
+      }
+
+      function closeNewStationModal() {
+        document.getElementById('modal-new-station').classList.add('hidden');
+        document.getElementById('modal-new-station').classList.remove('flex');
+        editingStationId = null;
+      }
+
+      // Builds a fresh station object with a unique id/code derived from its
+      // name. Shared by the single "Nueva Estación" flow and the bulk
+      // list importer so both stay in sync.
+      function createStationObject(name, line) {
+        const slug = normalizeText(name).replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'estacion';
+        let id = slug, counter = 2;
+        while (stations.some(st => st.id === id)) { id = `${slug}_${counter}`; counter++; }
+        const code = normalizeText(name).replace(/[^a-z]/g, '').slice(0, 3).toUpperCase() || 'EST';
+        return ensureStationDefaults({ id, name, code, line, status: 'Programada', progress: 0, checklist: [] });
+      }
+
+      function saveNewStation() {
+        action(editingStationId ? 'editar estación' : 'crear estación', () => {
+          const name = (document.getElementById('new-station-name').value || '').trim();
+          const line = (document.getElementById('new-station-line').value || 'Línea 2').trim();
+          if (!name) { showToast('Escribe un nombre para la estación.', 'error'); return; }
+
+          if (editingStationId) {
+            const station = stations.find(st => st.id === editingStationId);
+            if (!station) { closeNewStationModal(); return; }
+            station.name = name;
+            station.line = line;
+            closeNewStationModal();
+            commit();
+            showToast(`Estación actualizada a "${name}".`, 'success');
+            return;
+          }
+
+          const newStation = createStationObject(name, line);
+          stations.push(newStation);
+          ui.activeStationId = newStation.id;
+          ui.activeStationTab = 'checklist';
+          closeNewStationModal();
+          commit();
+          showToast(`Estación "${name}" creada exitosamente.`, 'success');
+        });
+      }
+
+      /* ---------- Bulk station list import ----------
+         Parses a pasted outline like:
+           Línea 1
+           * Alfonso Reyes
+           * Aztlán
+           Línea 2
+           * Alameda
+         "Línea N" (any wording after it is ignored) starts a new section;
+         "*"/"-"-prefixed lines under it are station names for that line.
+         Existing stations are matched by normalized name and skipped so
+         nothing gets duplicated. */
+      function openBulkStationsModal() {
+        document.getElementById('bulk-stations-input').value = '';
+        document.getElementById('modal-bulk-stations').classList.remove('hidden');
+        document.getElementById('modal-bulk-stations').classList.add('flex');
+        safeCreateIcons();
+      }
+
+      function closeBulkStationsModal() {
+        document.getElementById('modal-bulk-stations').classList.add('hidden');
+        document.getElementById('modal-bulk-stations').classList.remove('flex');
+      }
+
+      function parseStationListText(text) {
+        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        const result = []; // { name, line }
+        let currentLine = 'Línea 2';
+
+        lines.forEach(raw => {
+          const lineHeaderMatch = raw.match(/^l[ií]nea\s*\d+/i);
+          if (lineHeaderMatch) {
+            currentLine = raw.replace(/\(.*\)\s*$/, '').trim(); // drop trailing "(por si...)" notes
+            return;
+          }
+          const bulletMatch = raw.match(/^[*\-•]\s*(.+)$/);
+          const name = (bulletMatch ? bulletMatch[1] : raw).trim();
+          if (name) result.push({ name, line: currentLine });
+        });
+        return result;
+      }
+
+      /* ---------- Bulk budget-base import ----------
+         Parses a pasted list/markdown table of "Estación | Monto" and sets
+         each matching station's Presupuesto Base. Matching is by
+         normalized name; entries with a trailing line-qualifier like
+         "L1"/"L2"/"Línea 1" that don't match any station verbatim are
+         retried against the name with that suffix stripped — but if more
+         than one such entry reduces to the same existing station (e.g.
+         "Cuauhtémoc L1" and "Cuauhtémoc L2" when only one "Cuauhtémoc"
+         station exists), we never guess which amount to keep: it's
+         reported as ambiguous instead of silently picking one. */
+      function parseBudgetListText(text) {
+        const entries = [];
+        text.split('\n').forEach(raw => {
+          const line = raw.trim();
+          if (!line) return;
+          if (/^[\-|:\s]+$/.test(line)) return; // markdown table separator row
+          const cells = line.startsWith('|')
+            ? line.split('|').map(c => c.trim()).filter((c, i, arr) => !(i === 0 && c === '') && !(i === arr.length - 1 && c === ''))
+            : line.split('|').map(c => c.trim());
+
+          let name, amountRaw;
+          if (cells.length >= 2) { name = cells[0]; amountRaw = cells[1]; }
+          else {
+            const m = line.match(/^(.*?)[:\-–]\s*\$?[\d,.]+\s*$/); // "Name: $1,234.00" or "Name - 1234"
+            if (!m) return;
+            name = m[1].trim();
+            amountRaw = line.slice(m[1].length);
+          }
+          if (!name || /^estaci[oó]n$/i.test(name)) return; // header row
+
+          const amount = parseFloat(String(amountRaw).replace(/[^0-9.\-]/g, ''));
+          if (isNaN(amount)) return;
+          entries.push({ name, amount });
+        });
+        return entries;
+      }
+
+      function stripLineSuffix(name) {
+        return name.replace(/\s*[-–(]?\s*(l[ií]nea\s*\d+|l\d+)\)?\s*$/i, '').trim();
+      }
+
+      function openBulkBudgetModal() {
+        document.getElementById('bulk-budget-input').value = '';
+        document.getElementById('modal-bulk-budget').classList.remove('hidden');
+        document.getElementById('modal-bulk-budget').classList.add('flex');
+        safeCreateIcons();
+      }
+
+      function closeBulkBudgetModal() {
+        document.getElementById('modal-bulk-budget').classList.add('hidden');
+        document.getElementById('modal-bulk-budget').classList.remove('flex');
+      }
+
+      function processBulkBudget() {
+        action('cargar presupuesto base por estación', () => {
+          const text = document.getElementById('bulk-budget-input').value;
+          const entries = parseBudgetListText(text);
+          if (entries.length === 0) { showToast('No se encontró ninguna estación con monto en el texto pegado.', 'error'); return; }
+
+          const applied = [];
+          const unmatched = [];
+          const stillUnmatched = [];
+
+          // Pass 1: exact name match.
+          entries.forEach(entry => {
+            const station = stations.find(st => normalizeText(st.name) === normalizeText(entry.name));
+            if (station) applied.push({ station, entry });
+            else unmatched.push(entry);
+          });
+
+          // Pass 2: for leftovers, try stripping a trailing line-qualifier — but only
+          // apply if exactly one leftover entry reduces to a given station; if two or
+          // more collide on the same station, that's a real ambiguity, not a guess.
+          const strippedGroups = {}; // normalized stripped name -> [entries]
+          unmatched.forEach(entry => {
+            const stripped = stripLineSuffix(entry.name);
+            if (normalizeText(stripped) === normalizeText(entry.name)) { stillUnmatched.push(entry); return; }
+            const key = normalizeText(stripped);
+            (strippedGroups[key] = strippedGroups[key] || []).push({ entry, stripped });
+          });
+
+          const ambiguous = [];
+          Object.values(strippedGroups).forEach(group => {
+            const station = stations.find(st => normalizeText(st.name) === normalizeText(group[0].stripped));
+            if (!station) { group.forEach(g => stillUnmatched.push(g.entry)); return; }
+            if (group.length > 1) { ambiguous.push({ station, candidates: group.map(g => g.entry) }); return; }
+            applied.push({ station, entry: group[0].entry });
+          });
+
+          applied.forEach(({ station, entry }) => { station.presupuesto.base = Math.max(0, entry.amount); });
+
+          closeBulkBudgetModal();
+          if (applied.length > 0) commit(); else renderAll();
+
+          let msg = `Se aplicó presupuesto a ${applied.length} estación(es).`;
+          if (ambiguous.length > 0) {
+            msg += ` ⚠ ${ambiguous.length} caso(s) ambiguo(s) sin aplicar: ` +
+              ambiguous.map(a => `"${a.station.name}" tiene ${a.candidates.length} montos posibles (${a.candidates.map(c => `${c.name}: ${formatMoney(c.amount)}`).join(' / ')})`).join('; ') +
+              ' — captúralos manualmente en la pestaña Presupuesto.';
+          }
+          if (stillUnmatched.length > 0) {
+            msg += ` No se encontró estación para: ${stillUnmatched.map(e => e.name).join(', ')}.`;
+          }
+          showToast(msg, ambiguous.length > 0 || stillUnmatched.length > 0 ? 'error' : 'success');
+        });
+      }
+
+      function processBulkStations() {
+        action('importar lista de estaciones', () => {
+          const text = document.getElementById('bulk-stations-input').value;
+          const parsed = parseStationListText(text);
+          if (parsed.length === 0) { showToast('No se encontró ninguna estación en el texto pegado.', 'error'); return; }
+
+          let created = 0, skipped = 0;
+          const createdNames = [];
+          parsed.forEach(({ name, line }) => {
+            const already = stations.some(st => normalizeText(st.name) === normalizeText(name));
+            if (already) { skipped++; return; }
+            stations.push(createStationObject(name, line));
+            createdNames.push(name);
+            created++;
+          });
+
+          closeBulkStationsModal();
+          if (created > 0) commit(); else renderAll();
+          showToast(`Se crearon ${created} estación(es) nueva(s). Se omitieron ${skipped} que ya existían.`, created > 0 ? 'success' : 'info');
+        });
+      }
+
+      /* ---------- Generic confirmation modal ----------
+         Used anywhere the app needs a "are you sure?" before deleting
+         something. Deliberately not window.confirm(): native browser
+         confirm/alert dialogs can be silently suppressed in some
+         embedded or sandboxed viewers, which looks exactly like the
+         action "not working" with no error at all. */
+      let pendingConfirmAction = null;
+
+      function requestConfirmation(message, onConfirm) {
+        pendingConfirmAction = onConfirm;
+        document.getElementById('confirm-action-message').textContent = message;
+        document.getElementById('modal-confirm-action').classList.remove('hidden');
+        document.getElementById('modal-confirm-action').classList.add('flex');
+        safeCreateIcons();
+      }
+
+      function closeConfirmActionModal() {
+        document.getElementById('modal-confirm-action').classList.add('hidden');
+        document.getElementById('modal-confirm-action').classList.remove('flex');
+        pendingConfirmAction = null;
+      }
+
+      function runConfirmedAction() {
+        const fn = pendingConfirmAction;
+        closeConfirmActionModal();
+        if (fn) action('confirmar acción', fn);
+      }
+
+      function deleteStation(id) {
+        action('eliminar estación', () => {
+          if (stations.length <= 1) { showToast('No puedes eliminar la última estación de la app.', 'error'); return; }
+          const station = stations.find(st => st.id === id);
+          if (!station) return;
+          requestConfirmation(
+            `¿Seguro que deseas eliminar la estación "${station.name}"? Se perderán sus ${station.checklist.length} registro(s) de tabla de control y su minuta.`,
+            () => {
+              stations = stations.filter(st => st.id !== id);
+              if (ui.activeStationId === id) ui.activeStationId = stations[0].id;
+              commit();
+              showToast(`Estación "${station.name}" eliminada.`, 'info');
+            }
+          );
+        });
+      }
+
+      /* ============================================================
+         6. ANALYTICS
+         ============================================================ */
+
+      let chartOverallInstance = null;
+      let analyticsSelectedStationId = null;
+
+      function computeStationInstallProgress(station) {
+        const total = station.checklist.length;
+        const done = station.checklist.filter(i => i.instalacionOk).length;
+        const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+        return { total, done, pct };
+      }
+
+      function renderStationProgressCard() {
+        const select = document.getElementById('analytics-station-select');
+        const id = (select && select.value) || analyticsSelectedStationId || (stations[0] && stations[0].id);
+        analyticsSelectedStationId = id;
+        const station = stations.find(s => s.id === id) || stations[0];
+        if (!station) return;
+
+        const { total, done, pct } = computeStationInstallProgress(station);
+        document.getElementById('analytics-station-progress-pct').textContent = `${pct}%`;
+        document.getElementById('analytics-station-progress-name').textContent = `${station.name} (${station.line})`;
+        document.getElementById('analytics-station-progress-bar').style.width = `${pct}%`;
+        document.getElementById('analytics-station-progress-detail').textContent =
+          total > 0 ? `${done} de ${total} señales con instalación completa` : 'Esta estación no tiene registros en su tabla de control.';
+      }
+
+      function renderAnalytics() {
+        const totalContrato = stations.reduce((acc, st) => acc + st.checklist.reduce((a, i) => a + (i.cantContrato || 0), 0), 0);
+        const totalImpresion = stations.reduce((acc, st) => acc + st.checklist.filter(i => i.listoImpresion).length, 0);
+        const totalInstaladas = stations.reduce((acc, st) => acc + st.checklist.filter(i => i.instalacionOk).length, 0);
+
+        document.getElementById('stat-total-contrato').textContent = totalContrato;
+        document.getElementById('stat-total-impresion').textContent = totalImpresion;
+        document.getElementById('stat-total-instaladas').textContent = totalInstaladas;
+
+        const select = document.getElementById('analytics-station-select');
+        const previousSelection = analyticsSelectedStationId;
+        select.innerHTML = stations.map(st => `<option value="${st.id}" ${st.id === previousSelection ? 'selected' : ''}>${st.name} (${st.line})</option>`).join('');
+        if (!stations.some(st => st.id === previousSelection)) select.value = stations[0] ? stations[0].id : '';
+        renderStationProgressCard();
+
+        const ctxOv = document.getElementById('analyticsChartOverall').getContext('2d');
+        if (chartOverallInstance) chartOverallInstance.destroy();
+        chartOverallInstance = new Chart(ctxOv, {
+          type: 'doughnut',
+          data: { labels: ['Instaladas OK', 'En Impresión', 'Pendientes'], datasets: [{ data: [totalInstaladas, totalImpresion, Math.max(0, totalContrato - totalInstaladas)], backgroundColor: ['#10b981', '#0ea5e9', '#cbd5e1'] }] },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      }
+
+      /* ============================================================
+         6.5 PRESUPUESTO (budget)
+         Each station carries its own `presupuesto` object: a base
+         contracted amount plus lists of aditivas/deductivas, each with
+         its own approval checkbox — only approved entries affect the
+         adjusted budget, matching how aditivas/deductivas are handled
+         everywhere else in the app (nothing counts until it's approved).
+         ============================================================ */
+
+      function formatMoney(n) {
+        const val = Number(n) || 0;
+        return '$' + val.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+
+      // A checklist item's price can be keyed by its clave de partida (SEÑ.ID)
+      // or its CURS code — whichever the uploaded price file used.
+      function lookupItemPrice(priceList, item) {
+        const byClave = priceList[normalizeText(item.clavePartida)];
+        if (byClave !== undefined) return byClave;
+        const byCodigo = priceList[normalizeText(item.codigo)];
+        if (byCodigo !== undefined) return byCodigo;
+        return null;
+      }
+
+      // Automatic aditivas/deductivas: one row per checklist item that has a
+      // piece-count aditiva/deductiva, priced using the station's uploaded
+      // price list. Items with no matching price are flagged, not silently
+      // counted as $0, so coverage gaps are visible instead of hidden.
+      function getAutoBudgetRows(station) {
+        const priceList = station.presupuesto.priceList;
+        const hasPriceList = Object.keys(priceList).length > 0;
+        const rows = station.checklist
+          .filter(item => item.aditivaVal > 0 || item.deductivaVal > 0)
+          .map(item => {
+            const precio = hasPriceList ? lookupItemPrice(priceList, item) : null;
+            return {
+              item,
+              precio,
+              montoAditiva: precio !== null ? item.aditivaVal * precio : 0,
+              montoDeductiva: precio !== null ? item.deductivaVal * precio : 0
+            };
+          });
+        return { rows, hasPriceList };
+      }
+
+      function getBudgetTotals(station) {
+        const base = Number(station.presupuesto.base) || 0;
+        const manualAditivas = station.presupuesto.aditivas.filter(a => a.aprobada).reduce((sum, a) => sum + (Number(a.monto) || 0), 0);
+        const manualDeductivas = station.presupuesto.deductivas.filter(d => d.aprobada).reduce((sum, d) => sum + (Number(d.monto) || 0), 0);
+
+        const { rows, hasPriceList } = getAutoBudgetRows(station);
+        const autoAditivas = rows.reduce((sum, r) => sum + r.montoAditiva, 0);
+        const autoDeductivas = rows.reduce((sum, r) => sum + r.montoDeductiva, 0);
+        const sinPrecio = rows.filter(r => r.precio === null).length;
+
+        const totalAditivas = autoAditivas + manualAditivas;
+        const totalDeductivas = autoDeductivas + manualDeductivas;
+        const ajustado = base + totalAditivas - totalDeductivas;
+        const variacion = base > 0 ? ((ajustado - base) / base) * 100 : 0;
+
+        return { base, totalAditivas, totalDeductivas, ajustado, variacion, autoAditivas, autoDeductivas, manualAditivas, manualDeductivas, hasPriceList, sinPrecio };
+      }
+
+      function renderBudgetView() {
+        const select = document.getElementById('budget-station-select');
+        select.innerHTML = stations.map(st => `<option value="${st.id}" ${st.id === ui.activeStationId ? 'selected' : ''}>${st.name} (${st.line})</option>`).join('');
+        renderBudgetDetail();
+      }
+
+      function setBudgetStation(id) {
+        action('cambiar estación de presupuesto', () => {
+          ui.activeStationId = id;
+          renderStationsTabs(); // keeps the Estaciones tab in sync with the same active station
+          renderBudgetDetail();
+          safeCreateIcons();
+          saveState();
+        });
+      }
+
+      function renderAutoBudgetTable(station) {
+        const { rows, hasPriceList } = getAutoBudgetRows(station);
+
+        if (!hasPriceList) {
+          return `<div class="text-xs text-slate-500 bg-slate-50 border border-dashed border-slate-300 rounded-xl p-4 text-center">
+            Carga un archivo de precios por partida (botón arriba) para calcular aditivas y deductivas automáticamente a partir de la tabla de control.
+          </div>`;
+        }
+        if (rows.length === 0) {
+          return `<div class="text-xs text-slate-400 text-center py-4">Esta estación no tiene aditivas ni deductivas de piezas en su tabla de control.</div>`;
+        }
+
+        return `
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs border-collapse">
+              <thead>
+                <tr class="text-left text-slate-500 uppercase text-[10px] font-bold border-b border-slate-200">
+                  <th class="p-2">Partida</th><th class="p-2">Descripción</th><th class="p-2 text-center">Aditiva (pz)</th><th class="p-2 text-center">Deductiva (pz)</th><th class="p-2 text-right">Precio Unit.</th><th class="p-2 text-right">Monto Aditiva</th><th class="p-2 text-right">Monto Deductiva</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.map(r => `
+                  <tr class="border-b border-slate-100 ${r.precio === null ? 'bg-amber-50' : ''}">
+                    <td class="p-2 font-mono font-bold">${r.item.clavePartida}</td>
+                    <td class="p-2 text-slate-600">${r.item.desc || r.item.codigo}</td>
+                    <td class="p-2 text-center text-emerald-700 font-bold">${r.item.aditivaVal || ''}</td>
+                    <td class="p-2 text-center text-rose-700 font-bold">${r.item.deductivaVal || ''}</td>
+                    <td class="p-2 text-right">${r.precio === null ? '<span class="text-amber-600 font-bold">Sin precio</span>' : formatMoney(r.precio)}</td>
+                    <td class="p-2 text-right text-emerald-700 font-bold">${r.montoAditiva > 0 ? formatMoney(r.montoAditiva) : ''}</td>
+                    <td class="p-2 text-right text-rose-700 font-bold">${r.montoDeductiva > 0 ? formatMoney(r.montoDeductiva) : ''}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>`;
+      }
+
+      function renderBudgetEntryRows(station, type) {
+        const list = station.presupuesto[type];
+        if (list.length === 0) {
+          return `<div class="text-xs text-slate-400 text-center py-4">Sin ${type === 'aditivas' ? 'aditivas' : 'deductivas'} manuales registradas.</div>`;
+        }
+        return list.map(entry => `
+          <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+            <input type="checkbox" ${entry.aprobada ? 'checked' : ''} onchange="updateBudgetEntry('${type}', ${entry.id}, 'aprobada', this.checked)" title="Aprobada" class="w-5 h-5 rounded border-slate-300 cursor-pointer ${type === 'aditivas' ? 'text-emerald-600 focus:ring-emerald-500' : 'text-rose-600 focus:ring-rose-500'}">
+            <input type="text" value="${entry.desc || ''}" onchange="updateBudgetEntry('${type}', ${entry.id}, 'desc', this.value)" placeholder="Descripción" class="flex-1 text-xs p-2 border border-slate-200 rounded-lg bg-white focus:ring-1 focus:ring-sky-500">
+            <input type="number" min="0" step="0.01" value="${entry.monto || 0}" onchange="updateBudgetEntry('${type}', ${entry.id}, 'monto', this.value)" class="w-32 text-xs p-2 border border-slate-200 rounded-lg bg-white text-right font-bold focus:ring-1 focus:ring-sky-500">
+            <button onclick="deleteBudgetEntry('${type}', ${entry.id})" class="text-slate-400 hover:text-rose-600 p-1.5" title="Eliminar"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </div>`).join('');
+      }
+
+      function renderBudgetDetail() {
+        const station = getActiveStation();
+        const container = document.getElementById('budget-detail-container');
+        const totals = getBudgetTotals(station);
+        const aprobadasAditivas = station.presupuesto.aditivas.filter(a => a.aprobada).length;
+        const aprobadasDeductivas = station.presupuesto.deductivas.filter(d => d.aprobada).length;
+
+        container.innerHTML = `
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div class="bg-white p-5 rounded-2xl border-2 border-slate-200 hover:border-sky-300 shadow-sm transition">
+              <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Presupuesto Inicial</div>
+              <div class="flex items-center gap-0.5 mt-1.5">
+                <span class="text-xl font-black text-slate-800">$</span>
+                <input type="number" min="0" step="0.01" value="${totals.base}" onchange="updateBudgetBase(this.value)" title="Escribe aquí el presupuesto completo de la estación" class="text-xl font-black text-slate-800 w-full bg-transparent border-0 p-0 focus:outline-none focus:ring-0">
+              </div>
+              <div class="text-[11px] text-slate-400 mt-0.5">Monto base contratado (editable)</div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-emerald-200 shadow-sm">
+              <div class="text-[11px] font-bold text-emerald-600 uppercase tracking-wide">Aditivas (+)</div>
+              <div class="text-xl font-black text-emerald-700 mt-1.5">${formatMoney(totals.totalAditivas)}</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">${formatMoney(totals.autoAditivas)} por partida + ${aprobadasAditivas} manual(es)</div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-rose-200 shadow-sm">
+              <div class="text-[11px] font-bold text-rose-600 uppercase tracking-wide">Deductivas (-)</div>
+              <div class="text-xl font-black text-rose-700 mt-1.5">${formatMoney(totals.totalDeductivas)}</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">${formatMoney(totals.autoDeductivas)} por partida + ${aprobadasDeductivas} manual(es)</div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-sky-200 shadow-sm">
+              <div class="text-[11px] font-bold text-sky-600 uppercase tracking-wide">Presupuesto Ajustado</div>
+              <div class="text-xl font-black text-sky-700 mt-1.5">${formatMoney(totals.ajustado)}</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">Variación: ${totals.variacion >= 0 ? '+' : ''}${totals.variacion.toFixed(1)}%</div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border ${totals.sinPrecio > 0 ? 'border-amber-300' : 'border-slate-200'} shadow-sm">
+              <div class="text-[11px] font-bold ${totals.sinPrecio > 0 ? 'text-amber-600' : 'text-slate-400'} uppercase tracking-wide">Partidas Sin Precio</div>
+              <div class="text-xl font-black ${totals.sinPrecio > 0 ? 'text-amber-700' : 'text-slate-800'} mt-1.5">${totals.sinPrecio}</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">${totals.hasPriceList ? 'No se contabilizan en el ajustado' : 'Carga un archivo de precios'}</div>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-1.5"><i data-lucide="calculator" class="w-4 h-4"></i> Aditivas y Deductivas por Partida (automático)</h3>
+            <p class="text-[11px] text-slate-500 -mt-2">Calculado a partir de las piezas de aditiva/deductiva en la Tabla de Control × el precio unitario cargado para cada partida.</p>
+            ${renderAutoBudgetTable(station)}
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3">
+            <div class="flex justify-between items-center">
+              <h3 class="text-sm font-bold text-slate-800 flex items-center gap-1.5"><i data-lucide="list" class="w-4 h-4"></i> Precios Cargados por Partida (${station.presupuesto.priceListRows.length})</h3>
+              ${station.presupuesto.priceListRows.length > 0 ? `<button onclick="clearLoadedPrices()" class="text-rose-600 hover:underline text-xs font-bold">Quitar precios cargados</button>` : ''}
+            </div>
+            ${renderLoadedPricesTable(station)}
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-5 rounded-2xl border border-emerald-200 shadow-sm flex flex-col gap-3">
+              <div class="flex justify-between items-center">
+                <h3 class="text-sm font-bold text-emerald-700 flex items-center gap-1.5"><i data-lucide="plus-circle" class="w-4 h-4"></i> Aditivas Manuales Adicionales</h3>
+                <button onclick="addBudgetEntry('aditivas')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Agregar</button>
+              </div>
+              <div class="flex flex-col gap-2">${renderBudgetEntryRows(station, 'aditivas')}</div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-rose-200 shadow-sm flex flex-col gap-3">
+              <div class="flex justify-between items-center">
+                <h3 class="text-sm font-bold text-rose-700 flex items-center gap-1.5"><i data-lucide="minus-circle" class="w-4 h-4"></i> Deductivas Manuales Adicionales</h3>
+                <button onclick="addBudgetEntry('deductivas')" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Agregar</button>
+              </div>
+              <div class="flex flex-col gap-2">${renderBudgetEntryRows(station, 'deductivas')}</div>
+            </div>
+          </div>
+        `;
+        safeCreateIcons();
+      }
+
+      function renderLoadedPricesTable(station) {
+        const rows = station.presupuesto.priceListRows;
+        if (!rows || rows.length === 0) {
+          return `<div class="text-xs text-slate-400 text-center py-4 border border-dashed border-slate-300 rounded-xl">Aún no has cargado un archivo de precios para esta estación.</div>`;
+        }
+        return `
+          <div class="max-h-64 overflow-y-auto border border-slate-200 rounded-xl">
+            <table class="w-full text-xs border-collapse">
+              <thead class="sticky top-0 bg-slate-100">
+                <tr class="text-left text-slate-500 uppercase text-[10px] font-bold">
+                  <th class="p-2">Partida / Código</th>
+                  <th class="p-2 text-right">Cantidad</th>
+                  <th class="p-2 text-right">Precio Unitario</th>
+                  <th class="p-2 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.map(r => `
+                  <tr class="border-b border-slate-100">
+                    <td class="p-2 font-mono">${r.label}</td>
+                    <td class="p-2 text-right">${r.cantidad !== null && r.cantidad !== undefined ? r.cantidad : '—'}</td>
+                    <td class="p-2 text-right font-bold">${formatMoney(r.price)}</td>
+                    <td class="p-2 text-right text-slate-600">${r.total !== null && r.total !== undefined ? formatMoney(r.total) : '—'}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>`;
+      }
+
+      function clearLoadedPrices() {
+        action('quitar precios cargados', () => {
+          const station = getActiveStation();
+          requestConfirmation(`¿Quitar los ${station.presupuesto.priceListRows.length} precios cargados de "${station.name}"? Las aditivas/deductivas automáticas por partida dejarán de calcularse hasta que cargues otro archivo.`, () => {
+            station.presupuesto.priceList = {};
+            station.presupuesto.priceListRows = [];
+            commit();
+            showToast('Precios cargados eliminados.', 'info');
+          });
+        });
+      }
+
+      function updateBudgetBase(val) {
+        action('actualizar presupuesto base', () => {
+          const station = getActiveStation();
+          station.presupuesto.base = Math.max(0, Number(val) || 0);
+          commit();
+        });
+      }
+
+      function addBudgetEntry(type) {
+        action(`agregar ${type}`, () => {
+          const station = getActiveStation();
+          station.presupuesto[type].push({ id: Date.now() + Math.floor(Math.random() * 1000), desc: '', monto: 0, aprobada: false });
+          commit();
+        });
+      }
+
+      function updateBudgetEntry(type, id, field, val) {
+        action('actualizar movimiento de presupuesto', () => {
+          const station = getActiveStation();
+          const entry = station.presupuesto[type].find(e => e.id === id);
+          if (!entry) return;
+          entry[field] = field === 'monto' ? Math.max(0, Number(val) || 0) : (field === 'aprobada' ? !!val : val);
+          commit();
+        });
+      }
+
+      function deleteBudgetEntry(type, id) {
+        action('eliminar movimiento de presupuesto', () => {
+          const station = getActiveStation();
+          requestConfirmation('¿Eliminar este movimiento de presupuesto?', () => {
+            station.presupuesto[type] = station.presupuesto[type].filter(e => e.id !== id);
+            commit();
+          });
+        });
+      }
+
+      /* ============================================================
+         6.6 RESUMEN (cross-station budget overview)
+         Read-only: pulls the same getBudgetTotals() used in the
+         Presupuesto tab for every station, so this can never drift out
+         of sync with the per-station numbers — there's no separate
+         calculation to keep consistent.
+         ============================================================ */
+
+      function renderResumenView() {
+        const container = document.getElementById('resumen-table-container');
+        const rows = stations.map(st => ({ st, totals: getBudgetTotals(st) }));
+
+        const grand = rows.reduce((acc, r) => ({
+          base: acc.base + r.totals.base,
+          aditivas: acc.aditivas + r.totals.totalAditivas,
+          deductivas: acc.deductivas + r.totals.totalDeductivas,
+          ajustado: acc.ajustado + r.totals.ajustado
+        }), { base: 0, aditivas: 0, deductivas: 0, ajustado: 0 });
+
+        container.innerHTML = `
+          <table class="w-full text-sm border-collapse">
+            <thead>
+              <tr class="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wide border-b-2 border-slate-200">
+                <th class="p-3">Estación</th>
+                <th class="p-3 text-right">Presupuesto Base</th>
+                <th class="p-3 text-right text-emerald-600">Aditiva (+)</th>
+                <th class="p-3 text-right text-rose-600">Deductiva (-)</th>
+                <th class="p-3 text-right text-sky-700">Saldo a Pagar</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(({ st, totals }) => `
+                <tr class="border-b border-slate-100 hover:bg-slate-50">
+                  <td class="p-3">
+                    <div class="font-bold text-slate-800">${st.name}</div>
+                    <div class="text-[11px] text-slate-400">${st.line}</div>
+                  </td>
+                  <td class="p-3 text-right font-mono">${formatMoney(totals.base)}</td>
+                  <td class="p-3 text-right font-mono text-emerald-700">${formatMoney(totals.totalAditivas)}</td>
+                  <td class="p-3 text-right font-mono text-rose-700">${formatMoney(totals.totalDeductivas)}</td>
+                  <td class="p-3 text-right font-mono font-bold text-sky-800">${formatMoney(totals.ajustado)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+            <tfoot>
+              <tr class="border-t-2 border-slate-800 bg-slate-50 font-bold">
+                <td class="p-3">Total General</td>
+                <td class="p-3 text-right font-mono">${formatMoney(grand.base)}</td>
+                <td class="p-3 text-right font-mono text-emerald-700">${formatMoney(grand.aditivas)}</td>
+                <td class="p-3 text-right font-mono text-rose-700">${formatMoney(grand.deductivas)}</td>
+                <td class="p-3 text-right font-mono text-sky-800">${formatMoney(grand.ajustado)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        `;
+        safeCreateIcons();
+      }
+
+      /* ---------- Import a price-per-partida file for the budget ----------
+         Expects a simple table with a Partida (SEÑ.ID) or CURS column and a
+         Precio/Costo Unitario column — reuses the same header-matching
+         approach as the control-table importer so column order doesn't
+         matter. Prices are keyed by both clave de partida and CURS code so
+         a checklist item matches whichever identifier the file used. */
+      function parseBudgetPriceFile(matrix) {
+        const posPartida = findCellPosition(matrix, t => t === 'sen.id' || (t.length < 70 && (t.includes('partida') || t.includes('clave'))));
+        const posCurs = findCellPosition(matrix, t => t.length < 70 && (t.includes('curs') || t.includes('codigo')));
+        const posPrecio = findCellPosition(matrix, t => t.length < 70 && (t.includes('precio') || t.includes('costo') || t.includes('monto') || t.includes('valor unitario') || t === 'p.u.' || t === 'pu'));
+        const posTotalCol = findCellPosition(matrix, t => t.length < 70 && t === 'total');
+        const posCantidad = findCellPosition(matrix, t => t.length < 70 && t.includes('cantidad'));
+        if (!posPrecio || (!posPartida && !posCurs)) return null;
+
+        const headerRow = Math.max(posPartida ? posPartida.row : 0, posCurs ? posCurs.row : 0, posPrecio.row);
+        const priceList = {};
+        const rows = [];
+        let matched = 0;
+        let sumOfTotals = 0;
+        let footerTotal = null;
+
+        for (let r = headerRow + 1; r < matrix.length; r++) {
+          const row = matrix[r] || [];
+          const partidaCell = posPartida ? (row[posPartida.col] || '').toString().trim() : '';
+          const cursCell = posCurs ? (row[posCurs.col] || '').toString().trim() : '';
+          const precioRaw = row[posPrecio.col];
+          const precio = parseFloat(String(precioRaw).replace(/[^0-9.-]/g, ''));
+          const totalVal = posTotalCol ? parseFloat(String(row[posTotalCol.col]).replace(/[^0-9.-]/g, '')) : NaN;
+          const cantidadVal = posCantidad ? parseFloat(String(row[posCantidad.col]).replace(/[^0-9.-]/g, '')) : NaN;
+
+          if (!partidaCell && !cursCell) {
+            // Might be the file's own "Total Estación"/"Total por Estación" footer row.
+            const rowText = normalizeText(row.map(c => (c || '').toString()).join(' '));
+            if (rowText.includes('total') && !isNaN(totalVal)) footerTotal = totalVal;
+            continue;
+          }
+          if (isNaN(precio)) continue;
+
+          if (partidaCell) priceList[normalizeText(partidaCell)] = precio;
+          if (cursCell) priceList[normalizeText(cursCell)] = precio;
+          rows.push({ label: partidaCell || cursCell, price: precio, cantidad: isNaN(cantidadVal) ? null : cantidadVal, total: isNaN(totalVal) ? null : totalVal });
+          if (!isNaN(totalVal)) sumOfTotals += totalVal;
+          matched++;
+        }
+
+        if (matched === 0) return null;
+        const grandTotal = footerTotal !== null ? footerTotal : (posTotalCol ? sumOfTotals : null);
+        return { priceList, matched, grandTotal, rows };
+      }
+
+      // PDF version of the same parser: no real cell structure, so columns
+      // are reconstructed from text x-position, same approach as the
+      // control-table PDF importer.
+      function parsePdfBudgetPriceFile(rows) {
+        function findPos(matchFn) {
+          for (let r = 0; r < rows.length; r++) {
+            for (const it of rows[r].items) {
+              if (matchFn(normalizeText(it.text))) return { row: r, x: it.x };
+            }
+          }
+          return null;
+        }
+
+        const posPartida = findPos(t => t === 'sen.id' || (t.length < 70 && (t.includes('partida') || t.includes('clave'))));
+        const posCurs = findPos(t => t.length < 70 && (t.includes('curs') || t.includes('codigo')));
+        const posPrecio = findPos(t => t.length < 70 && (t.includes('precio') || t.includes('costo') || t.includes('monto') || t.includes('valor unitario') || t === 'p.u.' || t === 'pu'));
+        const posTotalCol = findPos(t => t.length < 70 && t === 'total');
+        const posCantidad = findPos(t => t.length < 70 && t.includes('cantidad'));
+        if (!posPrecio || (!posPartida && !posCurs)) return null;
+
+        const cols = [
+          posPartida && { key: 'partida', x: posPartida.x },
+          posCurs && { key: 'curs', x: posCurs.x },
+          { key: 'precio', x: posPrecio.x },
+          posTotalCol && { key: 'total', x: posTotalCol.x },
+          posCantidad && { key: 'cantidad', x: posCantidad.x }
+        ].filter(Boolean).sort((a, b) => a.x - b.x);
+        cols.forEach((col, idx) => {
+          col.left = idx === 0 ? -Infinity : (cols[idx - 1].x + col.x) / 2;
+          col.right = idx === cols.length - 1 ? Infinity : (col.x + cols[idx + 1].x) / 2;
+        });
+        const getColText = (row, key) => {
+          const col = cols.find(c => c.key === key);
+          if (!col) return '';
+          return row.items.filter(it => it.x >= col.left && it.x < col.right).map(it => it.text).join(' ').trim();
+        };
+
+        const headerRow = Math.max(posPartida ? posPartida.row : 0, posCurs ? posCurs.row : 0, posPrecio.row);
+        const priceList = {};
+        const rows2 = [];
+        let matched = 0;
+        let sumOfTotals = 0;
+        let footerTotal = null;
+
+        for (let r = headerRow + 1; r < rows.length; r++) {
+          const row = rows[r];
+          const partidaCell = posPartida ? getColText(row, 'partida') : '';
+          const cursCell = posCurs ? getColText(row, 'curs') : '';
+          const precioText = getColText(row, 'precio');
+          const precio = parseFloat(precioText.replace(/[^0-9.-]/g, ''));
+          const totalVal = posTotalCol ? parseFloat(getColText(row, 'total').replace(/[^0-9.-]/g, '')) : NaN;
+          const cantidadVal = posCantidad ? parseFloat(getColText(row, 'cantidad').replace(/[^0-9.-]/g, '')) : NaN;
+
+          if (!partidaCell && !cursCell) {
+            const rowText = normalizeText(row.items.map(it => it.text).join(' '));
+            if (rowText.includes('total') && !isNaN(totalVal)) footerTotal = totalVal;
+            continue;
+          }
+          if (isNaN(precio)) continue;
+
+          if (partidaCell) priceList[normalizeText(partidaCell)] = precio;
+          if (cursCell) priceList[normalizeText(cursCell)] = precio;
+          rows2.push({ label: partidaCell || cursCell, price: precio, cantidad: isNaN(cantidadVal) ? null : cantidadVal, total: isNaN(totalVal) ? null : totalVal });
+          if (!isNaN(totalVal)) sumOfTotals += totalVal;
+          matched++;
+        }
+
+        if (matched === 0) return null;
+        const grandTotal = footerTotal !== null ? footerTotal : (posTotalCol ? sumOfTotals : null);
+        return { priceList, matched, grandTotal, rows: rows2 };
+      }
+
+      async function handleImportBudgetFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const isPdf = /\.pdf$/i.test(file.name);
+
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          let parsed;
+
+          if (isPdf) {
+            const { rows } = await extractRowsFromPdf(arrayBuffer);
+            parsed = parsePdfBudgetPriceFile(rows);
+          } else {
+            const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+            const ws = workbook.Sheets[workbook.SheetNames[0]];
+            const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+            parsed = parseBudgetPriceFile(matrix);
+          }
+
+          if (!parsed) {
+            let hint = '';
+            try {
+              if (isPdf) {
+                const { rows } = await extractRowsFromPdf(arrayBuffer);
+                const headerTexts = rows.slice(0, 3).map(r => r.items.map(it => it.text).join(' ')).filter(Boolean);
+                if (headerTexts.length) hint = ` Texto detectado cerca del inicio: "${headerTexts.join(' | ').slice(0, 160)}".`;
+              } else {
+                const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+                const ws = workbook.Sheets[workbook.SheetNames[0]];
+                const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+                const headerCells = matrix.slice(0, 5).flat().filter(c => c && c.toString().trim() !== '');
+                if (headerCells.length) hint = ` Encabezados detectados: "${headerCells.slice(0, 10).join(', ')}".`;
+              }
+            } catch (hintErr) { /* the hint is best-effort; ignore failures here */ }
+
+            showToast(`No se encontró una columna de Partida/Clave/CURS junto con una de Precio/Costo/Monto en este ${isPdf ? 'PDF' : 'archivo'}.${hint}`, 'error');
+            return;
+          }
+
+          const station = getActiveStation();
+          openImportBudgetModal(parsed, station);
+        } catch (err) {
+          console.error(err);
+          showToast(`No se pudo leer el ${isPdf ? 'PDF (verifica que tenga texto seleccionable, no sea un escaneo)' : 'archivo (verifica que sea un Excel/CSV válido)'}.`, 'error');
+        } finally {
+          event.target.value = '';
+        }
+      }
+
+      let pendingBudgetImport = null;
+
+      function openImportBudgetModal(parsed, station) {
+        pendingBudgetImport = { parsed, stationId: station.id };
+        const totalLine = parsed.grandTotal !== null
+          ? ` El total del archivo (${formatMoney(parsed.grandTotal)}) se usará como Presupuesto Base de la estación.`
+          : ' No se detectó un total en el archivo, así que el Presupuesto Base no se modificará (puedes escribirlo manualmente).';
+        document.getElementById('import-budget-summary').textContent =
+          `Se encontraron precios para ${parsed.matched} partida(s). Se cargarán en la estación "${station.name}".${totalLine}`;
+        document.getElementById('modal-import-budget').classList.remove('hidden');
+        document.getElementById('modal-import-budget').classList.add('flex');
+        safeCreateIcons();
+      }
+
+      function closeImportBudgetModal() {
+        document.getElementById('modal-import-budget').classList.add('hidden');
+        document.getElementById('modal-import-budget').classList.remove('flex');
+        pendingBudgetImport = null;
+      }
+
+      function confirmImportBudgetPrices() {
+        action('cargar precios de presupuesto', () => {
+          if (!pendingBudgetImport) { closeImportBudgetModal(); return; }
+          const station = stations.find(st => st.id === pendingBudgetImport.stationId);
+          const parsed = pendingBudgetImport.parsed;
+          if (!station || !parsed) { closeImportBudgetModal(); return; }
+
+          station.presupuesto.priceList = parsed.priceList;
+          station.presupuesto.priceListRows = parsed.rows || [];
+          if (parsed.grandTotal !== null) station.presupuesto.base = Math.max(0, parsed.grandTotal);
+          closeImportBudgetModal();
+          commit();
+          const totalMsg = parsed.grandTotal !== null ? ` Presupuesto Base actualizado a ${formatMoney(parsed.grandTotal)}.` : '';
+          showToast(`Se cargaron precios para ${parsed.matched} partida(s) en "${station.name}".${totalMsg}`, 'success');
+        });
+      }
+
+      /* ============================================================
+         7. IMPORT (Excel / CSV / PDF)
+         The original control table has a multi-row header (SEÑ.ID / CURS /
+         Señal / Contrato / Actualizado / Observaciones); the station name
+         sits on the same row as "SEÑ.ID", under the Contrato/Actualizado
+         columns. Columns are located by matching header text rather than
+         hard-coded positions, so this keeps working across similar exports.
+         PDFs have no real cell structure, so we reconstruct a grid from
+         text positions instead — this is heuristic and mostly reliable for
+         single-line rows; long wrapped notes in adjacent rows may need a
+         manual check afterward.
+         ============================================================ */
+
+      function findCellPosition(matrix, matchFn) {
+        for (let r = 0; r < matrix.length; r++) {
+          const row = matrix[r] || [];
+          for (let c = 0; c < row.length; c++) {
+            if (matchFn(normalizeText(row[c]))) return { row: r, col: c };
+          }
+        }
+        return null;
+      }
+
+      function parseExcelControlTable(matrix, imageMap) {
+        const posSenId = findCellPosition(matrix, t => t === 'sen.id');
+        const posCurs = findCellPosition(matrix, t => t.length < 70 && t.includes('curs'));
+        const posSenal = findCellPosition(matrix, t => t === 'senal');
+        const posContrato = findCellPosition(matrix, t => /^contr\w{0,3}to$/.test(t));
+        const posActualizado = findCellPosition(matrix, t => t.length < 70 && t.includes('actualizado'));
+        const posObs = findCellPosition(matrix, t => t.length < 70 && t.includes('observaciones'));
+        if (!posSenId || !posContrato || !posActualizado) return null;
+
+        const headerRow = posSenId.row;
+        const detectedStationName = (matrix[headerRow][posContrato.col] || matrix[headerRow][posActualizado.col] || (posObs ? matrix[headerRow][posObs.col] : '') || '').toString().trim();
+        const items = [];
+        let currentSenId = '';
+
+        for (let r = headerRow + 1; r < matrix.length; r++) {
+          const row = matrix[r] || [];
+          const senIdCell = (row[posSenId.col] || '').toString().trim();
+          const cursCell = posCurs ? (row[posCurs.col] || '').toString().trim() : '';
+          const senalCell = posSenal ? (row[posSenal.col] || '').toString().trim() : '';
+          const obsCell = posObs ? (row[posObs.col] || '').toString().trim() : '';
+          const cantContrato = parseInt(row[posContrato.col], 10) || 0;
+          const cantActualizada = parseInt(row[posActualizado.col], 10) || 0;
+
+          if (normalizeText(`${senIdCell} ${cursCell} ${senalCell}`).includes('total')) break;
+          if (senIdCell) currentSenId = senIdCell;
+          if (!cursCell && !senalCell && cantContrato === 0 && cantActualizada === 0 && !obsCell) continue;
+
+          const imgForRow = imageMap && imageMap[r] ? imageMap[r] : null;
+          items.push(buildChecklistItem(items.length, currentSenId, cursCell, senalCell, cantContrato, cantActualizada, obsCell, imgForRow));
+        }
+        return { items, detectedStationName };
+      }
+
+      /* ---------- Embedded images (xlsx only) ----------
+         .xlsx files are zip archives; the spreadsheet's picture objects
+         live in xl/media, positioned by xl/drawings/drawingN.xml, which
+         is linked to the worksheet through a chain of .rels files. We walk
+         that chain to find, for each embedded picture, which row it's
+         anchored to — then filter out tiny decorative glyphs (checkmark
+         icons etc.) by size, since those aren't real photos of a signal.
+         This only ever augments the import; if anything here fails (e.g.
+         a legacy .xls, which isn't a zip), the row/quantity data already
+         parsed above is unaffected. */
+      async function extractEmbeddedImagesFromXlsx(arrayBuffer) {
+        try {
+          if (typeof JSZip === 'undefined') {
+            return { map: {}, status: 'error', detail: 'La librería JSZip no cargó (revisa tu conexión a internet) — el archivo se importó, pero sin fotos automáticas.' };
+          }
+
+          const zip = await JSZip.loadAsync(arrayBuffer);
+
+          const workbookXml = await zip.file('xl/workbook.xml')?.async('string');
+          if (!workbookXml) return { map: {}, status: 'error', detail: 'No se encontró xl/workbook.xml dentro del archivo — puede que no sea un .xlsx válido.' };
+
+          const relIdMatch = workbookXml.match(/<sheet[^>]*r:id="(rId\d+)"/);
+          const relId = relIdMatch ? relIdMatch[1] : 'rId1';
+
+          const workbookRelsXml = await zip.file('xl/_rels/workbook.xml.rels')?.async('string');
+          if (!workbookRelsXml) return { map: {}, status: 'error', detail: 'No se encontraron las relaciones del libro (xl/_rels/workbook.xml.rels).' };
+          const sheetRel = new RegExp(`<Relationship Id="${relId}"[^>]*Target="([^"]+)"`).exec(workbookRelsXml);
+          const sheetFileName = (sheetRel ? sheetRel[1] : 'worksheets/sheet1.xml').split('/').pop();
+          const sheetFile = `xl/worksheets/${sheetFileName}`;
+          const sheetXml = await zip.file(sheetFile)?.async('string');
+          if (!sheetXml) return { map: {}, status: 'error', detail: `No se encontró la hoja esperada (${sheetFile}) dentro del archivo.` };
+
+          const drawingRIdMatch = sheetXml.match(/<drawing r:id="(rId\d+)"/);
+          if (!drawingRIdMatch) return { map: {}, status: 'none' }; // this sheet simply has no embedded pictures
+
+          const sheetRelsFile = `xl/worksheets/_rels/${sheetFileName}.rels`;
+          const sheetRelsXml = await zip.file(sheetRelsFile)?.async('string');
+          if (!sheetRelsXml) return { map: {}, status: 'error', detail: 'La hoja referencia un dibujo pero no se encontraron sus relaciones.' };
+          const drawingRel = new RegExp(`<Relationship Id="${drawingRIdMatch[1]}"[^>]*Target="([^"]+)"`).exec(sheetRelsXml);
+          if (!drawingRel) return { map: {}, status: 'error', detail: 'No se pudo resolver la relación al archivo de dibujo (drawing).' };
+          const drawingFileName = drawingRel[1].replace('../', '').split('/').pop();
+          const drawingFile = `xl/drawings/${drawingFileName}`;
+          const drawingXml = await zip.file(drawingFile)?.async('string');
+          if (!drawingXml) return { map: {}, status: 'error', detail: `No se encontró el archivo de dibujo esperado (${drawingFile}).` };
+
+          const drawingRelsFile = `xl/drawings/_rels/${drawingFileName}.rels`;
+          const drawingRelsXml = await zip.file(drawingRelsFile)?.async('string');
+          if (!drawingRelsXml) return { map: {}, status: 'error', detail: 'No se encontraron las relaciones del dibujo (rutas a las imágenes).' };
+
+          const embedMap = {};
+          const relRegex = /<Relationship Id="(rId\d+)"[^>]*Target="([^"]+)"/g;
+          let m;
+          while ((m = relRegex.exec(drawingRelsXml))) embedMap[m[1]] = m[2].replace('../', '');
+
+          const anchorRegex = /<xdr:(oneCellAnchor|twoCellAnchor)>([\s\S]*?)<\/xdr:\1>/g;
+          const rowToBest = {};
+          let anchorMatch;
+          let totalAnchors = 0;
+
+          while ((anchorMatch = anchorRegex.exec(drawingXml))) {
+            totalAnchors++;
+            const block = anchorMatch[2];
+            const rowMatch = block.match(/<xdr:from>[\s\S]*?<xdr:row>(\d+)<\/xdr:row>/);
+            const extMatch = block.match(/<xdr:ext cx="(\d+)" cy="(\d+)"/);
+            const embedMatch = block.match(/r:embed="(rId\d+)"/);
+            if (!rowMatch || !extMatch || !embedMatch) continue;
+
+            const row = parseInt(rowMatch[1], 10);
+            const cx = parseInt(extMatch[1], 10);
+            const cy = parseInt(extMatch[2], 10);
+            if (Math.max(cx, cy) <= 200000) continue; // small decorative glyph, not a real photo
+
+            const mediaTarget = embedMap[embedMatch[1]];
+            if (!mediaTarget) continue;
+            const area = cx * cy;
+            if (!rowToBest[row] || rowToBest[row].area < area) {
+              rowToBest[row] = { mediaPath: `xl/media/${mediaTarget.split('/').pop()}`, area };
+            }
+          }
+
+          if (totalAnchors === 0) return { map: {}, status: 'none' };
+
+          const result = {};
+          for (const [row, info] of Object.entries(rowToBest)) {
+            const file = zip.file(info.mediaPath);
+            if (!file) continue;
+            const base64 = await file.async('base64');
+            const ext = info.mediaPath.split('.').pop().toLowerCase();
+            const mime = ext === 'png' ? 'image/png' : (ext === 'jpg' || ext === 'jpeg') ? 'image/jpeg' : ext === 'gif' ? 'image/gif' : null;
+            if (!mime) continue;
+            result[row] = `data:${mime};base64,${base64}`;
+          }
+
+          if (Object.keys(result).length === 0) {
+            return { map: {}, status: 'filtered', detail: `Se detectaron ${totalAnchors} imagen(es) en el archivo, pero todas parecían íconos decorativos pequeños, no fotos de señales.` };
+          }
+          return { map: result, status: 'ok' };
+        } catch (err) {
+          console.error('Error leyendo imágenes incrustadas del archivo:', err);
+          return { map: {}, status: 'error', detail: err.message || 'Error desconocido al leer las imágenes.' };
+        }
+      }
+
+      async function extractRowsFromPdf(arrayBuffer) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const rows = [];
+        for (let p = 1; p <= pdf.numPages; p++) {
+          const page = await pdf.getPage(p);
+          const content = await page.getTextContent();
+          const items = content.items.map(it => ({ x: it.transform[4], y: it.transform[5], text: it.str })).filter(it => it.text.trim() !== '');
+          items.sort((a, b) => b.y - a.y || a.x - b.x);
+          let current = null;
+          items.forEach(it => {
+            if (!current || Math.abs(current.y - it.y) > 3) { current = { y: it.y, page: p, items: [] }; rows.push(current); }
+            current.items.push(it);
+          });
+        }
+        rows.forEach(row => row.items.sort((a, b) => a.x - b.x));
+        return { rows, pdf };
+      }
+
+      function parsePdfControlTable(rows) {
+        function findPos(matchFn) {
+          for (let r = 0; r < rows.length; r++) {
+            for (const it of rows[r].items) {
+              if (matchFn(normalizeText(it.text))) return { row: r, x: it.x };
+            }
+          }
+          return null;
+        }
+        const posSenId = findPos(t => t === 'sen.id');
+        const posUbicacion = findPos(t => t.includes('ubicacion'));
+        const posCurs = findPos(t => t.length < 70 && t.includes('curs'));
+        const posSenal = findPos(t => t === 'senal');
+        const posContrato = findPos(t => /^contr\w{0,3}to$/.test(t));
+        const posActualizado = findPos(t => t.length < 70 && t.includes('actualizado'));
+        const posObs = findPos(t => t.length < 70 && t.includes('observaciones'));
+        if (!posSenId || !posContrato || !posActualizado) return null;
+
+        const cols = [
+          { key: 'senId', x: posSenId.x }, posUbicacion && { key: 'ubicacion', x: posUbicacion.x },
+          posCurs && { key: 'curs', x: posCurs.x }, posSenal && { key: 'senal', x: posSenal.x },
+          { key: 'contrato', x: posContrato.x }, { key: 'actualizado', x: posActualizado.x }, posObs && { key: 'obs', x: posObs.x }
+        ].filter(Boolean).sort((a, b) => a.x - b.x);
+        cols.forEach((col, idx) => {
+          col.left = idx === 0 ? -Infinity : (cols[idx - 1].x + col.x) / 2;
+          col.right = idx === cols.length - 1 ? Infinity : (col.x + cols[idx + 1].x) / 2;
+        });
+        const getColText = (row, key) => {
+          const col = cols.find(c => c.key === key);
+          if (!col) return '';
+          return row.items.filter(it => it.x >= col.left && it.x < col.right).map(it => it.text).join(' ').trim();
+        };
+
+        const headerRow = posSenId.row;
+        const detectedStationName = getColText(rows[headerRow], 'obs') || getColText(rows[headerRow], 'actualizado') || getColText(rows[headerRow], 'contrato');
+        const rawRows = rows.slice(headerRow + 1).map((row, i) => ({
+          rowIndex: headerRow + 1 + i,
+          senId: getColText(row, 'senId'), curs: getColText(row, 'curs'), senal: getColText(row, 'senal'),
+          contratoText: getColText(row, 'contrato'), actualizadoText: getColText(row, 'actualizado'), obs: getColText(row, 'obs')
+        }));
+
+        const merged = [];
+        rawRows.forEach(row => {
+          const hasNumbers = !isNaN(parseInt(row.contratoText, 10)) || !isNaN(parseInt(row.actualizadoText, 10));
+          const hasContent = !!(row.curs || row.senal || row.obs);
+          if (!row.senId && !hasNumbers) {
+            if (hasContent && merged.length > 0) {
+              const prev = merged[merged.length - 1];
+              if (row.senal) prev.senal = (prev.senal ? prev.senal + ' ' : '') + row.senal;
+              if (row.obs) prev.obs = (prev.obs ? prev.obs + ' ' : '') + row.obs;
+            }
+            return;
+          }
+          merged.push(row);
+        });
+
+        const items = [];
+        const itemRowIndices = [];
+        let currentSenId = '';
+        for (const row of merged) {
+          if (normalizeText(`${row.senId} ${row.curs} ${row.senal}`).includes('total')) break;
+          if (row.senId) currentSenId = row.senId;
+          const cantContrato = parseInt(row.contratoText, 10) || 0;
+          const cantActualizada = parseInt(row.actualizadoText, 10) || 0;
+          if (!row.curs && !row.senal && cantContrato === 0 && cantActualizada === 0 && !row.obs) continue;
+          items.push(buildChecklistItem(items.length, currentSenId, row.curs, row.senal, cantContrato, cantActualizada, row.obs));
+          itemRowIndices.push(row.rowIndex);
+        }
+
+        const senalCol = cols.find(c => c.key === 'senal');
+        return { items, detectedStationName, itemRowIndices, senalBounds: senalCol ? { left: senalCol.left, right: senalCol.right } : null };
+      }
+
+      /* ---------- Cropping each row's sign graphic straight from the PDF page ----------
+         Some PDFs (this app's original control table, for instance) draw the
+         actual sign design directly on the page instead of embedding it as a
+         separate object — there's no "picture" to extract, just pixels in
+         that row's Señal column. So instead we render each page to a canvas
+         and crop the region for each row, using its neighbors' Y position to
+         estimate that row's vertical band (rows with a taller graphic have a
+         bigger gap to their neighbors). A near-blank crop (e.g. a row that
+         was just plain text) is dropped so it doesn't overwrite the app's
+         own default badge with an empty image. */
+      async function extractRowImagesFromPdf(pdf, rows, senalBounds, rowIndices) {
+        if (!senalBounds || rowIndices.length === 0) return {};
+        const scale = 2.5;
+        const result = {};
+        const byPage = {};
+        rowIndices.forEach(idx => {
+          const row = rows[idx];
+          if (!row) return;
+          (byPage[row.page] = byPage[row.page] || []).push(idx);
+        });
+
+        for (const pageNumStr of Object.keys(byPage)) {
+          const pageNum = Number(pageNumStr);
+          try {
+            const page = await pdf.getPage(pageNum);
+            const viewport = page.getViewport({ scale });
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const ctx = canvas.getContext('2d');
+            await page.render({ canvasContext: ctx, viewport }).promise;
+
+            const pageRowIndices = byPage[pageNumStr]; // real item rows on this page, in top-to-bottom order
+            for (let k = 0; k < pageRowIndices.length; k++) {
+              const idx = pageRowIndices[k];
+              const row = rows[idx];
+              const prevRow = k > 0 ? rows[pageRowIndices[k - 1]] : null;
+              const nextRow = k < pageRowIndices.length - 1 ? rows[pageRowIndices[k + 1]] : null;
+              const gapAbove = prevRow ? (prevRow.y - row.y) : 40;
+              const gapBelow = nextRow ? (row.y - nextRow.y) : gapAbove;
+              const topY = row.y + gapAbove * 0.5;
+              const bottomY = row.y - gapBelow * 0.5;
+
+              const left = senalBounds.left === -Infinity ? 0 : senalBounds.left;
+              const right = senalBounds.right === Infinity ? viewport.width / scale : senalBounds.right;
+              const p1 = viewport.convertToViewportPoint(left, topY);
+              const p2 = viewport.convertToViewportPoint(right, bottomY);
+
+              const cropX = Math.max(0, Math.min(p1[0], p2[0]));
+              const cropY = Math.max(0, Math.min(p1[1], p2[1]));
+              const cropW = Math.max(1, Math.min(canvas.width - cropX, Math.abs(p2[0] - p1[0])));
+              const cropH = Math.max(1, Math.min(canvas.height - cropY, Math.abs(p2[1] - p1[1])));
+              if (cropW < 4 || cropH < 4) continue;
+
+              const outCanvas = document.createElement('canvas');
+              outCanvas.width = cropW;
+              outCanvas.height = cropH;
+              const outCtx = outCanvas.getContext('2d');
+              outCtx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+              // Skip near-blank crops (plain rows with no real graphic) so we
+              // don't overwrite the app's own default badge with a blank image.
+              const { data } = outCtx.getImageData(0, 0, cropW, cropH);
+              let nonWhite = 0;
+              for (let i = 0; i < data.length; i += 4 * 37) { // sample, not every pixel
+                if (data[i] < 245 || data[i + 1] < 245 || data[i + 2] < 245) nonWhite++;
+              }
+              const sampled = Math.ceil(data.length / (4 * 37));
+              if (sampled > 0 && nonWhite / sampled < 0.02) continue; // essentially blank
+
+              result[idx] = outCanvas.toDataURL('image/png');
+            }
+          } catch (err) {
+            console.warn(`No se pudo procesar imágenes de la página ${pageNum} del PDF:`, err);
+          }
+        }
+        return result;
+      }
+
+      async function handleImportFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const isPdf = /\.pdf$/i.test(file.name);
+
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          let parsed;
+          if (isPdf) {
+            const { rows, pdf } = await extractRowsFromPdf(arrayBuffer);
+            parsed = parsePdfControlTable(rows);
+            if (parsed) {
+              const imageMap = await extractRowImagesFromPdf(pdf, rows, parsed.senalBounds, parsed.itemRowIndices);
+              let withPhoto = 0;
+              parsed.items.forEach((item, i) => {
+                const rowIdx = parsed.itemRowIndices[i];
+                if (imageMap[rowIdx]) { item.customImg = imageMap[rowIdx]; withPhoto++; }
+              });
+              if (withPhoto > 0) showToast(`Se recortaron ${withPhoto} gráfico(s) de señal directamente del PDF y se cargaron automáticamente.`, 'info');
+            }
+          } else {
+            const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+            const ws = workbook.Sheets[workbook.SheetNames[0]];
+            const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+            const isXlsx = /\.xlsx$/i.test(file.name);
+            let imageMap = {};
+            if (isXlsx) {
+              const extraction = await extractEmbeddedImagesFromXlsx(arrayBuffer);
+              imageMap = extraction.map;
+              if (extraction.status === 'error') {
+                showToast(`No se pudieron leer las fotos incrustadas: ${extraction.detail}`, 'error');
+              } else if (extraction.status === 'filtered') {
+                showToast(extraction.detail, 'info');
+              }
+            }
+            parsed = parseExcelControlTable(matrix, imageMap);
+            if (parsed) {
+              const withPhoto = parsed.items.filter(i => i.customImg).length;
+              if (withPhoto > 0) showToast(`Se encontraron ${withPhoto} foto(s) incrustada(s) en el archivo y se cargaron automáticamente.`, 'info');
+            }
+          }
+
+          if (!parsed) { showToast(`No se reconoció el formato de la tabla de control en este ${isPdf ? 'PDF' : 'archivo'}.`, 'error'); return; }
+          if (parsed.items.length === 0) { showToast('No se encontraron registros de señales para importar.', 'error'); return; }
+
+          const normDetected = normalizeText(parsed.detectedStationName);
+          let bestGuess = stations.find(st => {
+            const n = normalizeText(st.name);
+            return n === normDetected || n.includes(normDetected) || normDetected.includes(n);
+          });
+          if (!bestGuess) bestGuess = getActiveStation();
+
+          openImportStationModal(parsed.items, parsed.detectedStationName, bestGuess.id);
+        } catch (err) {
+          console.error(err);
+          showToast(`No se pudo leer el ${isPdf ? 'PDF (verifica que tenga texto seleccionable, no sea un escaneo)' : 'archivo (verifica que sea un Excel/CSV válido)'}.`, 'error');
+        } finally {
+          event.target.value = '';
+        }
+      }
+
+      let pendingImport = { items: [], detectedName: '' };
+
+      function openImportStationModal(items, detectedName, preselectId) {
+        pendingImport = { items, detectedName };
+        const summary = document.getElementById('import-station-summary');
+        summary.textContent = detectedName
+          ? `Se encontraron ${items.length} registro(s) para "${detectedName}" en el archivo.`
+          : `Se encontraron ${items.length} registro(s) en el archivo (no se detectó el nombre de la estación).`;
+        const select = document.getElementById('import-station-select');
+        select.innerHTML = stations.map(st => `<option value="${st.id}" ${st.id === preselectId ? 'selected' : ''}>${st.name} (${st.line}) — ${st.checklist.length} registro(s) actuales</option>`).join('');
+        document.getElementById('modal-import-station').classList.remove('hidden');
+        document.getElementById('modal-import-station').classList.add('flex');
+        safeCreateIcons();
+      }
+
+      function closeImportStationModal() {
+        document.getElementById('modal-import-station').classList.add('hidden');
+        document.getElementById('modal-import-station').classList.remove('flex');
+        pendingImport = { items: [], detectedName: '' };
+      }
+
+      function confirmImportToStation() {
+        action('importar tabla de control', () => {
+          const targetId = document.getElementById('import-station-select').value;
+          const targetStation = stations.find(st => st.id === targetId);
+          if (!targetStation || pendingImport.items.length === 0) { closeImportStationModal(); return; }
+          targetStation.checklist = pendingImport.items;
+          ui.activeStationId = targetStation.id;
+          ui.activeStationTab = 'checklist';
+          closeImportStationModal();
+          commit();
+          showToast(`Se importaron ${targetStation.checklist.length} registros a "${targetStation.name}".`, 'success');
+        });
+      }
+
+      /* ============================================================
+         8. EXPORT (Excel / PDF)
+         ============================================================ */
+
+      function exportToExcel() {
+        action('exportar Excel', () => {
+          if (typeof XLSX === 'undefined') {
+            showToast('La librería para generar Excel no cargó (revisa tu conexión a internet) — vuelve a intentarlo en unos segundos.', 'error');
+            return;
+          }
+          const station = getActiveStation();
+          const dataToExport = station.checklist.map(i => ({
+            'Partida': i.clavePartida, 'CURS': i.codigo, 'Descripción': i.desc, 'Criterio': i.criterio,
+            'Cant Contrato': i.cantContrato, 'Cant Actualizada': i.cantActualizada,
+            'Listo Impresión': i.listoImpresion ? 'SÍ' : 'NO', 'Instalación OK': i.instalacionOk ? 'SÍ' : 'NO',
+            'Aditiva': i.aditivaVal, 'Deductiva': i.deductivaVal, 'Observaciones': i.notas
+          }));
+          const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+          const workbook = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(workbook, worksheet, station.code);
+          XLSX.writeFile(workbook, `Metrorrey_Supervision_${station.code}.xlsx`);
+          showToast('Archivo Excel exportado con éxito.', 'success');
+        });
+      }
+
+      function exportFullReportPDF() {
+        action('exportar reporte PDF', () => {
+          if (typeof window.jspdf === 'undefined') {
+            showToast('La librería para generar PDF no cargó (revisa tu conexión a internet) — vuelve a intentarlo en unos segundos.', 'error');
+            return;
+          }
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF('p', 'mm', 'a4');
+          if (typeof doc.autoTable !== 'function') {
+            showToast('La librería de tablas para el PDF no cargó (revisa tu conexión a internet) — vuelve a intentarlo en unos segundos.', 'error');
+            return;
+          }
+
+          doc.setFillColor(15, 23, 42);
+          doc.rect(0, 0, 210, 30, 'F');
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(16);
+          doc.text('METRORREY - SUPERVISIÓN Y CONTROL', 14, 18);
+          doc.setFontSize(10);
+          doc.text('Reporte General de Línea 2', 14, 25);
+
+          doc.setTextColor(15, 23, 42);
+          doc.setFontSize(12);
+          doc.text('Resumen por Estación:', 14, 42);
+
+          const totalRows = stations.map(st => {
+            const total = st.checklist.length;
+            const impresion = st.checklist.filter(i => i.listoImpresion).length;
+            const instalacion = st.checklist.filter(i => i.instalacionOk).length;
+            const avance = total > 0 ? Math.round((instalacion / total) * 100) : 0;
+            return [st.name, st.line, st.status, total, impresion, instalacion, `${avance}%`];
+          });
+
+          doc.autoTable({
+            startY: 48,
+            head: [['Estación', 'Línea', 'Estatus', 'Partidas', 'Listas Impresión', 'Instaladas OK', 'Avance']],
+            body: totalRows, headStyles: { fillColor: [2, 132, 199] }, styles: { fontSize: 9 }
+          });
+
+          // Budget summary (same figures as the Resumen tab)
+          doc.addPage();
+          doc.setFillColor(15, 23, 42);
+          doc.rect(0, 0, 210, 22, 'F');
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(14);
+          doc.text('Resumen de Presupuesto por Estación', 14, 14);
+
+          const budgetRows = stations.map(st => {
+            const t = getBudgetTotals(st);
+            return [st.name, formatMoney(t.base), formatMoney(t.totalAditivas), formatMoney(t.totalDeductivas), formatMoney(t.ajustado)];
+          });
+          const grandTotals = stations.reduce((acc, st) => {
+            const t = getBudgetTotals(st);
+            return { base: acc.base + t.base, aditivas: acc.aditivas + t.totalAditivas, deductivas: acc.deductivas + t.totalDeductivas, ajustado: acc.ajustado + t.ajustado };
+          }, { base: 0, aditivas: 0, deductivas: 0, ajustado: 0 });
+          budgetRows.push(['Total General', formatMoney(grandTotals.base), formatMoney(grandTotals.aditivas), formatMoney(grandTotals.deductivas), formatMoney(grandTotals.ajustado)]);
+
+          doc.autoTable({
+            startY: 28,
+            head: [['Estación', 'Presupuesto Base', 'Aditiva (+)', 'Deductiva (-)', 'Saldo a Pagar']],
+            body: budgetRows,
+            headStyles: { fillColor: [2, 132, 199] },
+            styles: { fontSize: 9 },
+            didParseCell: (data) => {
+              if (data.row.index === budgetRows.length - 1) data.cell.styles.fontStyle = 'bold';
+            }
+          });
+
+          stations.forEach(st => {
+            doc.addPage('a4', 'landscape');
+            doc.setFillColor(2, 132, 199);
+            doc.rect(0, 0, 297, 22, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(14);
+            doc.text(`Estación ${st.name} (${st.line})`, 14, 14);
+
+            if (st.checklist.length === 0) {
+              doc.setTextColor(100, 116, 139);
+              doc.setFontSize(10);
+              doc.text('Esta estación aún no tiene registros en su tabla de control.', 14, 32);
+              return;
+            }
+
+            const rows = st.checklist.map(i => [i.clavePartida || '', i.codigo || '', i.cantContrato, i.cantActualizada, i.listoImpresion ? 'Sí' : 'No', i.instalacionOk ? 'Sí' : 'No', i.aditivaVal, i.deductivaVal, i.notas || '']);
+            doc.autoTable({
+              startY: 28,
+              head: [['Partida', 'CURS', 'Contrato', 'Actualiz.', 'Impresión', 'Instal. OK', 'Aditiva', 'Deductiva', 'Observaciones']],
+              body: rows,
+              headStyles: { fillColor: [15, 23, 42] },
+              styles: { fontSize: 8, overflow: 'linebreak' },
+              columnStyles: {
+                0: { cellWidth: 22 }, 1: { cellWidth: 38 }, 2: { cellWidth: 18 }, 3: { cellWidth: 18 },
+                4: { cellWidth: 18 }, 5: { cellWidth: 18 }, 6: { cellWidth: 16 }, 7: { cellWidth: 18 },
+                8: { cellWidth: 'auto' }
+              }
+            });
+          });
+
+          doc.save('Metrorrey_Reporte_General_L2.pdf');
+          showToast('Reporte PDF general generado exitosamente.', 'success');
+        });
+      }
+
+      function exportStationMinutaPDF() {
+        action('exportar minuta PDF', () => {
+          if (typeof window.jspdf === 'undefined') {
+            showToast('La librería para generar PDF no cargó (revisa tu conexión a internet) — vuelve a intentarlo en unos segundos.', 'error');
+            return;
+          }
+          const station = getActiveStation();
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF('p', 'mm', 'a4');
+          doc.setFillColor(2, 132, 199);
+          doc.rect(0, 0, 210, 30, 'F');
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(16);
+          doc.text(`MINUTA DE REUNIÓN - ESTACIÓN ${station.name.toUpperCase()}`, 14, 18);
+
+          doc.setTextColor(15, 23, 42);
+          doc.setFontSize(11);
+          doc.text(`Fecha: ${station.minuta.fecha || '2026-07-21'}`, 14, 45);
+
+          doc.setFontSize(12);
+          doc.text('Asistentes:', 14, 58);
+          doc.setFontSize(10);
+          const asistentesLines = doc.splitTextToSize(station.minuta.asistentes || '', 180);
+          doc.text(asistentesLines, 14, 65);
+
+          const acuerdosY = 65 + asistentesLines.length * 5 + 15;
+          doc.setFontSize(12);
+          doc.text('Acuerdos Principales:', 14, acuerdosY);
+          doc.setFontSize(10);
+          const acuerdosLines = doc.splitTextToSize(station.minuta.acuerdos || '', 180);
+          doc.text(acuerdosLines, 14, acuerdosY + 7);
+
+          doc.save(`Minuta_${station.code}.pdf`);
+          showToast('Minuta PDF exportada con éxito.', 'success');
+        });
+      }
+
+      /* ============================================================
+         9. INIT
+         ============================================================ */
+
+      window.onload = function () {
+        stations = seedStations();
+        const restored = loadState();
+        stations.forEach(st => ensureStationDefaults(st));
+        stations.forEach(st => st.checklist.forEach(item => recalculateItem(item)));
+        renderAll();
+        setSaveIndicator(restored ? 'ok' : 'ok');
+        if (restored) showToast('Se restauraron tus datos guardados en este navegador.', 'info');
+        autoConnectSyncIfConfigured();
+      };
+    </script>
+  </body>
+</html>
