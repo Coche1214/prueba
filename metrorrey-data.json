@@ -1,0 +1,345 @@
+{
+  "stations": [
+    {
+      "id": "lerdo",
+      "name": "Lerdo de Tejada",
+      "code": "LER",
+      "line": "Línea 2",
+      "status": "En Proceso",
+      "progress": 45,
+      "checklist": [
+        {
+          "id": 1,
+          "clavePartida": "SEÑ.1.01",
+          "codigo": "M2-LER-S01",
+          "desc": "Señal de Andén / Directorio de Destinos",
+          "criterio": "Acrílico 6mm con impresión vinil reflectante",
+          "cantContrato": 2,
+          "cantActualizada": 2,
+          "listoImpresion": true,
+          "instalacionOk": true,
+          "instaladasVal": 2,
+          "faltanVal": 0,
+          "aditivaVal": 0,
+          "deductivaVal": 0,
+          "done": true,
+          "notas": "Instalado correctamente en muro principal de andén norte.",
+          "customImg": null,
+          "instalacionImg": null
+        },
+        {
+          "id": 2,
+          "clavePartida": "SEÑ.1.02",
+          "codigo": "M2-LER-S02",
+          "desc": "Señal Informativa de Salida / Mezzanine",
+          "criterio": "Aluminum Composite Panel 4mm",
+          "cantContrato": 4,
+          "cantActualizada": 4,
+          "listoImpresion": true,
+          "instalacionOk": false,
+          "instaladasVal": 3,
+          "faltanVal": 1,
+          "aditivaVal": 0,
+          "deductivaVal": 0,
+          "done": false,
+          "notas": "Falta colocar la última pieza en acceso poniente.",
+          "customImg": null,
+          "instalacionImg": null
+        },
+        {
+          "id": 3,
+          "clavePartida": "SEÑ.1.03",
+          "codigo": "M2-LER-S03",
+          "desc": "Señal de Prohibido el Paso / Restricción",
+          "criterio": "Vinil adherido en mampara de cristal",
+          "cantContrato": 6,
+          "cantActualizada": 5,
+          "listoImpresion": true,
+          "instalacionOk": false,
+          "instaladasVal": 0,
+          "faltanVal": 5,
+          "aditivaVal": 0,
+          "deductivaVal": 1,
+          "done": false,
+          "notas": "Se aplicó deductiva por ajuste en mamparas de acceso.",
+          "customImg": null,
+          "instalacionImg": null
+        },
+        {
+          "id": 4,
+          "clavePartida": "SEÑ.1.04",
+          "codigo": "M2-LER-S04",
+          "desc": "Placa de Identificación de Estación",
+          "criterio": "Aluminio troquelado con esmalte horneado",
+          "cantContrato": 2,
+          "cantActualizada": 3,
+          "listoImpresion": true,
+          "instalacionOk": true,
+          "instaladasVal": 3,
+          "faltanVal": 0,
+          "aditivaVal": 1,
+          "deductivaVal": 0,
+          "done": true,
+          "notas": "Se añadió 1 pieza adicional por solicitud de inspección.",
+          "customImg": null,
+          "instalacionImg": null
+        },
+        {
+          "id": 5,
+          "clavePartida": "SEÑ.1.05",
+          "codigo": "M2-LER-S05",
+          "desc": "Señal de Ruta de Evacuación / Salida de Emergencia",
+          "criterio": "Fotoluminiscente alto brillo",
+          "cantContrato": 8,
+          "cantActualizada": 8,
+          "listoImpresion": true,
+          "instalacionOk": false,
+          "instaladasVal": 4,
+          "faltanVal": 4,
+          "aditivaVal": 0,
+          "deductivaVal": 0,
+          "done": false,
+          "notas": "Material impreso, pendiente montaje en pasillo sur.",
+          "customImg": null,
+          "instalacionImg": null
+        },
+        {
+          "id": 6,
+          "clavePartida": "SEÑ.1.06",
+          "codigo": "M2-LER-S06",
+          "desc": "Señal de Zona de Torniquetes y Taquillas",
+          "criterio": "Acrílico colgante con tensores de acero",
+          "cantContrato": 2,
+          "cantActualizada": 2,
+          "listoImpresion": true,
+          "instalacionOk": true,
+          "instaladasVal": 2,
+          "faltanVal": 0,
+          "aditivaVal": 0,
+          "deductivaVal": 0,
+          "done": true,
+          "notas": "Instalado a la altura requerida sobre línea de validadores.",
+          "customImg": null,
+          "instalacionImg": null
+        },
+        {
+          "id": 7,
+          "clavePartida": "SEÑ.1.07",
+          "codigo": "M2-LER-S07",
+          "desc": "Señal de Advertencia de Alto Voltaje / Subestación",
+          "criterio": "Aluminio reflectante de seguridad industrial",
+          "cantContrato": 4,
+          "cantActualizada": 4,
+          "listoImpresion": true,
+          "instalacionOk": false,
+          "instaladasVal": 0,
+          "faltanVal": 4,
+          "aditivaVal": 0,
+          "deductivaVal": 0,
+          "done": false,
+          "notas": "Entregado al jefe de mantenimiento eléctrico para colocación.",
+          "customImg": null,
+          "instalacionImg": null
+        }
+      ],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "alameda",
+      "name": "Alameda",
+      "code": "ALM",
+      "line": "Línea 2",
+      "status": "En Proceso",
+      "progress": 60,
+      "checklist": [
+        {
+          "id": 101,
+          "clavePartida": "SEÑ.2.01",
+          "codigo": "M2-ALM-S01",
+          "desc": "Señal de Andén / Directorio de Destinos",
+          "criterio": "Acrílico 6mm con impresión vinil reflectante",
+          "cantContrato": 4,
+          "cantActualizada": 4,
+          "listoImpresion": true,
+          "instalacionOk": true,
+          "instaladasVal": 4,
+          "faltanVal": 0,
+          "aditivaVal": 0,
+          "deductivaVal": 0,
+          "done": true,
+          "notas": "Instalación completa en ambos andenes.",
+          "customImg": null,
+          "instalacionImg": null
+        },
+        {
+          "id": 102,
+          "clavePartida": "SEÑ.2.02",
+          "codigo": "M2-ALM-S02",
+          "desc": "Señal Informativa de Salida / Mezzanine",
+          "criterio": "Aluminum Composite Panel 4mm",
+          "cantContrato": 6,
+          "cantActualizada": 6,
+          "listoImpresion": true,
+          "instalacionOk": true,
+          "instaladasVal": 6,
+          "faltanVal": 0,
+          "aditivaVal": 0,
+          "deductivaVal": 0,
+          "done": true,
+          "notas": "Revisado y aprobado por supervisor de estación.",
+          "customImg": null,
+          "instalacionImg": null
+        }
+      ],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "general_anaya",
+      "name": "General Anaya",
+      "code": "GAY",
+      "line": "Línea 2",
+      "status": "Programada",
+      "progress": 10,
+      "checklist": [
+        {
+          "id": 201,
+          "clavePartida": "SEÑ.3.01",
+          "codigo": "M2-GAY-S01",
+          "desc": "Señal de Andén Principal",
+          "criterio": "Acrílico 6mm",
+          "cantContrato": 2,
+          "cantActualizada": 2,
+          "listoImpresion": false,
+          "instalacionOk": false,
+          "instaladasVal": 0,
+          "faltanVal": 2,
+          "aditivaVal": 0,
+          "deductivaVal": 0,
+          "done": false,
+          "notas": "Pendiente levantamiento en campo.",
+          "customImg": null,
+          "instalacionImg": null
+        }
+      ],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "cuauhtemoc",
+      "name": "Cuauhtémoc",
+      "code": "CUA",
+      "line": "Línea 2",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "del_golfo",
+      "name": "Del Golfo",
+      "code": "GOL",
+      "line": "Línea 2",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "padre_mier",
+      "name": "Padre Mier",
+      "code": "PMI",
+      "line": "Línea 2",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "zaragoza",
+      "name": "Zaragoza",
+      "code": "ZAR",
+      "line": "Línea 2",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    }
+  ],
+  "updatedAt": "2026-07-23T03:30:44.769Z"
+}
