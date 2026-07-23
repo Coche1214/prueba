@@ -339,7 +339,595 @@
         "priceList": {},
         "priceListRows": []
       }
+    },
+    {
+      "id": "alfonso_reyes",
+      "name": "Alfonso Reyes",
+      "code": "ALF",
+      "line": "Línea 1",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "aztlan",
+      "name": "Aztlán",
+      "code": "AZT",
+      "line": "Línea 1",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "central",
+      "name": "Central",
+      "code": "CEN",
+      "line": "Línea 1",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "edison",
+      "name": "Edison",
+      "code": "EDI",
+      "line": "Línea 1",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "felix_u_gomez",
+      "name": "Félix U. Gómez",
+      "code": "FEL",
+      "line": "Línea 1",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "hospital",
+      "name": "Hospital",
+      "code": "HOS",
+      "line": "Línea 1",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "mitras",
+      "name": "Mitras",
+      "code": "MIT",
+      "line": "Línea 1",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "penitenciaria",
+      "name": "Penitenciaría",
+      "code": "PEN",
+      "line": "Línea 1",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "san_bernabe",
+      "name": "San Bernabé",
+      "code": "SAN",
+      "line": "Línea 1",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "simon_bolivar",
+      "name": "Simón Bolívar",
+      "code": "SIM",
+      "line": "Línea 1",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "talleres",
+      "name": "Talleres",
+      "code": "TAL",
+      "line": "Línea 1",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "unidad_modelo",
+      "name": "Unidad Modelo",
+      "code": "UNI",
+      "line": "Línea 1",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "y_griega",
+      "name": "Y Griega",
+      "code": "YGR",
+      "line": "Línea 1",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "anahuac",
+      "name": "Anáhuac",
+      "code": "ANA",
+      "line": "Línea 2",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "fundadores",
+      "name": "Fundadores",
+      "code": "FUN",
+      "line": "Línea 2",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "ninos_heroes",
+      "name": "Niños Héroes",
+      "code": "NIN",
+      "line": "Línea 2",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "regina",
+      "name": "Regina",
+      "code": "REG",
+      "line": "Línea 2",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "san_nicolas",
+      "name": "San Nicolás",
+      "code": "SAN",
+      "line": "Línea 2",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "santiago_tapia",
+      "name": "Santiago Tapia",
+      "code": "SAN",
+      "line": "Línea 2",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "sendero",
+      "name": "Sendero",
+      "code": "SEN",
+      "line": "Línea 2",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "universidad",
+      "name": "Universidad",
+      "code": "UNI",
+      "line": "Línea 2",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "colonia_obrera",
+      "name": "Colonia Obrera",
+      "code": "COL",
+      "line": "Línea 3",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "hospital_metropolitano",
+      "name": "Hospital Metropolitano",
+      "code": "HOS",
+      "line": "Línea 3",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "los_angeles",
+      "name": "Los Ángeles",
+      "code": "LOS",
+      "line": "Línea 3",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "metalurgicos",
+      "name": "Metalúrgicos",
+      "code": "MET",
+      "line": "Línea 3",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "moderna",
+      "name": "Moderna",
+      "code": "MOD",
+      "line": "Línea 3",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "ruiz_cortines",
+      "name": "Ruiz Cortines",
+      "code": "RUI",
+      "line": "Línea 3",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
+    },
+    {
+      "id": "santa_lucia",
+      "name": "Santa Lucía",
+      "code": "SAN",
+      "line": "Línea 3",
+      "status": "Programada",
+      "progress": 0,
+      "checklist": [],
+      "minuta": {
+        "fecha": "2026-07-21",
+        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
+        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
+      },
+      "presupuesto": {
+        "base": 0,
+        "aditivas": [],
+        "deductivas": [],
+        "priceList": {},
+        "priceListRows": []
+      }
     }
   ],
-  "updatedAt": "2026-07-23T04:06:51.668Z"
+  "updatedAt": "2026-07-23T04:27:23.209Z"
 }
