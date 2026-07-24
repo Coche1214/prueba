@@ -3763,28 +3763,7 @@
         "priceList": {},
         "priceListRows": []
       }
-    },
-    {
-      "id": "san_nicolas_2",
-      "name": "SAN NICOLAS",
-      "code": "SAN",
-      "line": "Línea 2",
-      "status": "Programada",
-      "progress": 0,
-      "checklist": [],
-      "minuta": {
-        "fecha": "2026-07-21",
-        "asistentes": "Ing. Roberto Garza (Director de Operación Metrorrey)\nArq. Sofía Morales (Supervisión de Línea 2)\nLic. Carlos ig Anuncios (Fabricación e Instalación)",
-        "acuerdos": "1. Revisión de catálogos de señalética en andén y mezzanine.\n2. Aprobación de muestras de acrílico y reflectante grado ingeniería.\n3. Programación de montajes nocturnos para evitar afectación a usuarios de Línea 2."
-      },
-      "presupuesto": {
-        "base": 0,
-        "aditivas": [],
-        "deductivas": [],
-        "priceList": {},
-        "priceListRows": []
-      }
     }
   ],
-  "updatedAt": "2026-07-24T00:35:17.005Z"
+  "updatedAt": "2026-07-24T00:37:49.533Z"
 }
