@@ -98,8 +98,8 @@
           "cantActualizada": 2,
           "listoImpresion": false,
           "instalacionOk": false,
-          "instaladasVal": 0,
-          "faltanVal": 2,
+          "instaladasVal": 1,
+          "faltanVal": 1,
           "aditivaVal": 0,
           "deductivaVal": 0,
           "done": false,
@@ -3910,5 +3910,5 @@
       }
     }
   ],
-  "updatedAt": "2026-07-24T16:40:22.211Z"
+  "updatedAt": "2026-07-24T16:40:44.945Z"
 }
