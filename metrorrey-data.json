@@ -96,7 +96,7 @@
           "criterio": "",
           "cantContrato": 2,
           "cantActualizada": 2,
-          "listoImpresion": false,
+          "listoImpresion": true,
           "instalacionOk": false,
           "instaladasVal": 1,
           "faltanVal": 1,
@@ -3910,5 +3910,5 @@
       }
     }
   ],
-  "updatedAt": "2026-07-24T16:42:00.362Z"
+  "updatedAt": "2026-07-24T16:42:04.681Z"
 }
