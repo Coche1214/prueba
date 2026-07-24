@@ -3245,7 +3245,7 @@
           "criterio": "",
           "cantContrato": 0,
           "cantActualizada": 10,
-          "listoImpresion": false,
+          "listoImpresion": true,
           "instalacionOk": true,
           "instaladasVal": 10,
           "faltanVal": 0,
@@ -3264,7 +3264,7 @@
           "criterio": "",
           "cantContrato": 16,
           "cantActualizada": 16,
-          "listoImpresion": false,
+          "listoImpresion": true,
           "instalacionOk": true,
           "instaladasVal": 16,
           "faltanVal": 0,
@@ -3283,7 +3283,7 @@
           "criterio": "",
           "cantContrato": 2,
           "cantActualizada": 4,
-          "listoImpresion": false,
+          "listoImpresion": true,
           "instalacionOk": true,
           "instaladasVal": 4,
           "faltanVal": 0,
@@ -3765,5 +3765,5 @@
       }
     }
   ],
-  "updatedAt": "2026-07-24T04:53:13.368Z"
+  "updatedAt": "2026-07-24T04:53:27.841Z"
 }
