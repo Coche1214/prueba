@@ -3244,12 +3244,12 @@
           "desc": "C-000-ARM-S02-000-0-0",
           "criterio": "",
           "cantContrato": 0,
-          "cantActualizada": 2,
+          "cantActualizada": 10,
           "listoImpresion": false,
-          "instalacionOk": false,
-          "instaladasVal": 0,
-          "faltanVal": 2,
-          "aditivaVal": 2,
+          "instalacionOk": true,
+          "instaladasVal": 10,
+          "faltanVal": 0,
+          "aditivaVal": 10,
           "deductivaVal": 0,
           "done": false,
           "notas": " FAB.MOD.1.07 NO SE COLOCARAN EN LOS CUATRO ACCESOS (MARCADA EN PLANO)",
@@ -3765,5 +3765,5 @@
       }
     }
   ],
-  "updatedAt": "2026-07-24T04:51:54.528Z"
+  "updatedAt": "2026-07-24T04:52:04.609Z"
 }
