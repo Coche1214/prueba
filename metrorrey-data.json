@@ -3357,9 +3357,9 @@
           "cantContrato": 0,
           "cantActualizada": 10,
           "listoImpresion": true,
-          "instalacionOk": true,
-          "instaladasVal": 10,
-          "faltanVal": 0,
+          "instalacionOk": false,
+          "instaladasVal": 0,
+          "faltanVal": 10,
           "aditivaVal": 10,
           "deductivaVal": 0,
           "done": false,
@@ -3910,5 +3910,5 @@
       }
     }
   ],
-  "updatedAt": "2026-07-24T06:07:40.866Z"
+  "updatedAt": "2026-07-24T06:18:40.148Z"
 }
