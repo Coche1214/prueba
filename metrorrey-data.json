@@ -1003,8 +1003,8 @@
           "cantActualizada": 4,
           "listoImpresion": false,
           "instalacionOk": false,
-          "instaladasVal": 1,
-          "faltanVal": 3,
+          "instaladasVal": 2,
+          "faltanVal": 2,
           "aditivaVal": 2,
           "deductivaVal": 0,
           "done": false,
@@ -1024,8 +1024,8 @@
           "cantActualizada": 4,
           "listoImpresion": false,
           "instalacionOk": false,
-          "instaladasVal": 1,
-          "faltanVal": 3,
+          "instaladasVal": 2,
+          "faltanVal": 2,
           "aditivaVal": 2,
           "deductivaVal": 0,
           "done": false,
@@ -3908,5 +3908,5 @@
       }
     }
   ],
-  "updatedAt": "2026-08-25T17:07:08.540Z"
+  "updatedAt": "2026-08-25T17:07:21.539Z"
 }
